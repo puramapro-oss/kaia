@@ -9,6 +9,8 @@
     "lint": "eslint",
     "stripe:setup-products": "tsx scripts/create-stripe-products.ts",
     "stripe:setup-webhook": "tsx scripts/create-stripe-webhook.ts",
+    "videos:nature:plan": "tsx scripts/generate-nature-videos.ts",
+    "videos:nature:generate": "tsx scripts/generate-nature-videos.ts --execute",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
