@@ -13,8 +13,8 @@ import { type ReactNode } from "react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 
 const NAV = [
-  { href: "/dashboard", label: "Accueil", icon: Home },
-  { href: "/dashboard/routine", label: "Routine", icon: Sparkles },
+  { href: "/home", label: "Accueil", icon: Home },
+  { href: "/routine/builder", label: "Routine", icon: Sparkles },
   { href: "/dashboard/universe", label: "Mon univers", icon: Heart },
   { href: "/dashboard/impact", label: "Impact", icon: Globe2 },
   { href: "/dashboard/community", label: "Communauté", icon: Users },
@@ -24,8 +24,8 @@ const NAV = [
 ];
 
 const MOBILE_TABS = [
-  { href: "/dashboard", label: "Accueil", icon: Home },
-  { href: "/dashboard/routine", label: "Routine", icon: Sparkles },
+  { href: "/home", label: "Accueil", icon: Home },
+  { href: "/routine/builder", label: "Routine", icon: Sparkles },
   { href: "/dashboard/universe", label: "Univers", icon: Heart },
   { href: "/dashboard/community", label: "Lien", icon: Users },
   { href: "/dashboard/settings", label: "Plus", icon: SettingsIcon },

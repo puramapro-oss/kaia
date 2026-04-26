@@ -23,10 +23,12 @@ export default async function AppLayout({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "full_name, multisensorial_background_video, multisensorial_haptics, multisensorial_binaural, multisensorial_cinematic, accessibility_reduced_motion"
+      "full_name, onboarded_at, multisensorial_background_video, multisensorial_haptics, multisensorial_binaural, multisensorial_cinematic, accessibility_reduced_motion"
     )
     .eq("id", user.id)
     .maybeSingle();
+
+  if (!profile?.onboarded_at) redirect("/onboarding");
 
   const prefs: MultisensorialPrefs = profile
     ? {
