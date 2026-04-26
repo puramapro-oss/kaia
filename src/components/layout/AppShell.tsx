@@ -15,8 +15,8 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 const NAV = [
   { href: "/home", label: "Accueil", icon: Home },
   { href: "/routine/builder", label: "Routine", icon: Sparkles },
-  { href: "/dashboard/universe", label: "Mon univers", icon: Heart },
-  { href: "/dashboard/impact", label: "Impact", icon: Globe2 },
+  { href: "/universe", label: "Mon univers", icon: Heart },
+  { href: "/impact", label: "Impact", icon: Globe2 },
   { href: "/dashboard/community", label: "Communauté", icon: Users },
   { href: "/dashboard/contests", label: "Concours", icon: Trophy },
   { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
@@ -26,8 +26,8 @@ const NAV = [
 const MOBILE_TABS = [
   { href: "/home", label: "Accueil", icon: Home },
   { href: "/routine/builder", label: "Routine", icon: Sparkles },
-  { href: "/dashboard/universe", label: "Univers", icon: Heart },
-  { href: "/dashboard/community", label: "Lien", icon: Users },
+  { href: "/universe", label: "Univers", icon: Heart },
+  { href: "/impact", label: "Impact", icon: Globe2 },
   { href: "/dashboard/settings", label: "Plus", icon: SettingsIcon },
 ];
 
