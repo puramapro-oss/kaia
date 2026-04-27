@@ -1,0 +1,22 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["___APPLE_TEAM_ID___.dev.purama.kaia"],
+        "components": [
+          { "/": "/", "comment": "homepage" },
+          { "/": "/dashboard*", "comment": "post-login routing" },
+          { "/": "/onboarding*", "comment": "first-launch onboarding" },
+          { "/": "/routine*", "comment": "live session deep link" },
+          { "/": "/auth/callback*", "comment": "OAuth callback" },
+          { "/": "/i/*", "comment": "influencer landing" },
+          { "/": "/r/*", "comment": "referral landing" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["___APPLE_TEAM_ID___.dev.purama.kaia"]
+  }
+}
