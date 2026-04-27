@@ -1,6 +1,10 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+function envTrim(value: string | undefined): string | undefined {
+  return value?.replace(/\\n/g, "").trim() || undefined;
+}
+
+export const stripe = new Stripe(envTrim(process.env.STRIPE_SECRET_KEY) ?? "", {
   typescript: true,
 });
 

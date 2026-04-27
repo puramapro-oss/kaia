@@ -89,34 +89,32 @@ test.describe("Phase E — Deep prod (signup→DB, OAuth redirect, Stripe URL, l
   });
 
   test("E3. /api/stripe/checkout authentifié renvoie URL checkout.stripe.com", async ({ page, request }) => {
-    // login compte démo
-    await page.goto("/login");
-    await page.locator('input[name="email"]').fill(DEMO_EMAIL);
-    await page.locator('input[name="password"]').fill(DEMO_PASSWORD);
+    // signup fresh user (compte démo creds inconnus en CI)
+    const ts = Date.now();
+    const email = `clientsim-e3+${ts}@purama.dev`;
+    const password = `Sim${ts}!Aa9`;
+
+    await page.goto("/signup");
+    await page.locator('input[name="fullName"]').fill("E3 Stripe");
+    await page.locator('input[name="email"]').fill(email);
+    await page.locator('input[name="password"]').fill(password);
     await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/(home|dashboard|onboarding)/, { timeout: 15000 }).catch(() => {
-      // si creds invalides en CI on skip
+    await page.waitForURL(/\/(home|dashboard|onboarding)/, { timeout: 20000 });
+
+    // Call API depuis le context navigateur → cookies session inclus auto
+    const result = await page.evaluate(async () => {
+      const r = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan: "monthly" }),
+        credentials: "include",
+      });
+      const text = await r.text();
+      return { status: r.status, body: text };
     });
 
-    if (page.url().includes("/login")) {
-      test.skip(true, "Compte démo invalide en environnement courant");
-      return;
-    }
-
-    // POST /api/stripe/checkout avec session cookie héritée du context
-    const cookies = await page.context().cookies();
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-
-    const res = await request.post(`${BASE_URL}/api/stripe/checkout`, {
-      headers: {
-        "content-type": "application/json",
-        cookie: cookieHeader,
-      },
-      data: { plan: "monthly" },
-    });
-
-    expect(res.status()).toBe(200);
-    const json = (await res.json()) as { url?: string };
+    expect(result.status, `body=${result.body.slice(0, 300)}`).toBe(200);
+    const json = JSON.parse(result.body) as { url?: string };
     expect(json.url, "checkout URL renvoyé").toBeTruthy();
     expect(json.url!).toMatch(/^https:\/\/checkout\.stripe\.com\//);
   });
@@ -130,17 +128,17 @@ test.describe("Phase E — Deep prod (signup→DB, OAuth redirect, Stripe URL, l
   });
 
   test("E5. Logout → cookies session vidés → /home redirige /login", async ({ page, context }) => {
-    // login démo
-    await page.goto("/login");
-    await page.locator('input[name="email"]').fill(DEMO_EMAIL);
-    await page.locator('input[name="password"]').fill(DEMO_PASSWORD);
-    await page.locator('button[type="submit"]').click();
-    await page.waitForLoadState("networkidle", { timeout: 15000 });
+    // signup fresh
+    const ts = Date.now();
+    const email = `clientsim-e5+${ts}@purama.dev`;
+    const password = `Sim${ts}!Aa9`;
 
-    if (page.url().includes("/login")) {
-      test.skip(true, "Compte démo invalide");
-      return;
-    }
+    await page.goto("/signup");
+    await page.locator('input[name="fullName"]').fill("E5 Logout");
+    await page.locator('input[name="email"]').fill(email);
+    await page.locator('input[name="password"]').fill(password);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/(home|dashboard|onboarding)/, { timeout: 20000 });
 
     // simulate logout via Supabase REST signOut
     await context.clearCookies();
