@@ -67,24 +67,39 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Génération opus
+  // Génération : opus en priorité, fallback sonnet en cas de timeout/erreur réseau.
+  // Opus est le mieux pour la qualité narrative mais peut dépasser maxDuration sous charge.
   let guidance: RitualGuidance;
+  let modelUsed: "pro" | "main" = "pro";
   try {
     guidance = await askClaudeJSON<RitualGuidance>(buildRitualUserMessage(theme, slug), {
       model: "pro",
       systemPrompt: RITUAL_HOST_SYSTEM,
       jsonShapeHint: RITUAL_HOST_JSON_SHAPE,
-      maxTokens: 4096,
+      maxTokens: 3072,
       temperature: 0.7,
     });
-  } catch (err) {
-    return NextResponse.json(
-      {
-        error: "Génération rituel impossible.",
-        details: err instanceof Error ? err.message : String(err),
-      },
-      { status: 502 },
-    );
+  } catch (errPro) {
+    // Fallback sonnet (plus rapide, qualité narrative équivalente sur format JSON contraint).
+    try {
+      guidance = await askClaudeJSON<RitualGuidance>(buildRitualUserMessage(theme, slug), {
+        model: "main",
+        systemPrompt: RITUAL_HOST_SYSTEM,
+        jsonShapeHint: RITUAL_HOST_JSON_SHAPE,
+        maxTokens: 3072,
+        temperature: 0.7,
+      });
+      modelUsed = "main";
+    } catch (errMain) {
+      return NextResponse.json(
+        {
+          error: "Génération rituel impossible (opus + sonnet en échec).",
+          opus: errPro instanceof Error ? errPro.message : String(errPro),
+          sonnet: errMain instanceof Error ? errMain.message : String(errMain),
+        },
+        { status: 502 },
+      );
+    }
   }
 
   // Sanity check
@@ -115,7 +130,7 @@ export async function GET(request: NextRequest) {
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
       i18n,
-      audio_assets: { fr: { source: "client_speech_synthesis" } },
+      audio_assets: { fr: { source: "client_speech_synthesis", model: modelUsed } },
       participants_count: 0,
     })
     .select("id, slug, theme, starts_at, ends_at")
