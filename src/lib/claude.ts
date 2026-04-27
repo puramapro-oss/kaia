@@ -4,10 +4,15 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 export type ClaudeModel = "main" | "fast" | "pro";
 
+// Trim défensif : Vercel env CLI ajoute parfois \n / \r en fin de valeur.
+function envTrim(name: string, fallback: string): string {
+  return (process.env[name] ?? fallback).trim();
+}
+
 const MODEL_MAP: Record<ClaudeModel, string> = {
-  main: process.env.ANTHROPIC_MODEL_MAIN ?? "claude-sonnet-4-6",
-  fast: process.env.ANTHROPIC_MODEL_FAST ?? "claude-haiku-4-5-20251001",
-  pro: process.env.ANTHROPIC_MODEL_PRO ?? "claude-opus-4-7",
+  main: envTrim("ANTHROPIC_MODEL_MAIN", "claude-sonnet-4-6"),
+  fast: envTrim("ANTHROPIC_MODEL_FAST", "claude-haiku-4-5-20251001"),
+  pro: envTrim("ANTHROPIC_MODEL_PRO", "claude-opus-4-7"),
 };
 
 export interface AskClaudeOptions {
