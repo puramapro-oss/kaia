@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/daily-impact-aggregate",
       "schedule": "17 * * * *"
+    },
+    {
+      "path": "/api/cron/weekly-ritual",
+      "schedule": "0 6 * * 1"
     }
   ]
 }

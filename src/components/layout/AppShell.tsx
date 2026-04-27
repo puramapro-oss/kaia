@@ -8,6 +8,7 @@ import {
   Wallet,
   Settings as SettingsIcon,
   Trophy,
+  Sunrise,
 } from "lucide-react";
 import { type ReactNode } from "react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -17,7 +18,8 @@ const NAV = [
   { href: "/routine/builder", label: "Routine", icon: Sparkles },
   { href: "/universe", label: "Mon univers", icon: Heart },
   { href: "/impact", label: "Impact", icon: Globe2 },
-  { href: "/dashboard/community", label: "Communauté", icon: Users },
+  { href: "/rituals", label: "Rituel", icon: Sunrise },
+  { href: "/community", label: "Communauté", icon: Users },
   { href: "/dashboard/contests", label: "Concours", icon: Trophy },
   { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
   { href: "/dashboard/settings", label: "Réglages", icon: SettingsIcon },
@@ -26,8 +28,8 @@ const NAV = [
 const MOBILE_TABS = [
   { href: "/home", label: "Accueil", icon: Home },
   { href: "/routine/builder", label: "Routine", icon: Sparkles },
-  { href: "/universe", label: "Univers", icon: Heart },
-  { href: "/impact", label: "Impact", icon: Globe2 },
+  { href: "/rituals", label: "Rituel", icon: Sunrise },
+  { href: "/community", label: "Cercle", icon: Users },
   { href: "/dashboard/settings", label: "Plus", icon: SettingsIcon },
 ];
 
