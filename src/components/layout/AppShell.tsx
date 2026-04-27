@@ -11,6 +11,8 @@ import {
   Trophy,
   Sunrise,
   Compass,
+  MessageCircleQuestion,
+  LifeBuoy,
 } from "lucide-react";
 import { type ReactNode } from "react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -26,6 +28,7 @@ const NAV = [
   { href: "/missions", label: "Missions", icon: Compass },
   { href: "/shop", label: "Boutique", icon: ShoppingBag },
   { href: "/donations", label: "Soutenir", icon: HandHeart },
+  { href: "/ai-help", label: "Aide", icon: MessageCircleQuestion },
   { href: "/dashboard/settings", label: "Réglages", icon: SettingsIcon },
 ];
 
@@ -99,6 +102,16 @@ export function AppShell({
       {/* Main */}
       <main className="flex-1 flex flex-col min-w-0">
         <div className="flex-1 px-5 sm:px-8 pt-6 pb-28 lg:pb-8">{children}</div>
+
+        {/* Bouton SOS flottant — visible 24/7 partout dans (app) */}
+        <Link
+          href="/sos"
+          aria-label="Ressources d'aide d'urgence"
+          className="fixed left-4 bottom-20 lg:bottom-6 z-40 flex items-center gap-2 px-3 py-2 rounded-full bg-rose-300/90 text-black text-xs font-medium shadow-lg shadow-rose-300/20 hover:bg-rose-200 transition"
+        >
+          <LifeBuoy className="h-4 w-4" />
+          SOS
+        </Link>
 
         {/* Bottom tabs mobile */}
         <nav
