@@ -62,9 +62,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       version: version.rows[0]?.version,
-      function_exists: fnExists.rowCount > 0,
+      function_exists: (fnExists.rowCount ?? 0) > 0,
       function_body_preview: fnExists.rows[0]?.prosrc?.slice(0, 600),
-      trigger_exists: triggerExists.rowCount > 0,
+      trigger_exists: (triggerExists.rowCount ?? 0) > 0,
       trigger_target: triggerExists.rows[0]?.rel,
       profiles_columns: profileCols.rows,
       profiles_count: profilesCount.rows[0]?.n,
