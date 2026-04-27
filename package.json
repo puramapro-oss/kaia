@@ -11,6 +11,7 @@
     "stripe:setup-webhook": "tsx scripts/create-stripe-webhook.ts",
     "videos:nature:plan": "tsx scripts/generate-nature-videos.ts",
     "videos:nature:generate": "tsx scripts/generate-nature-videos.ts --execute",
+    "migrate:p6": "tsx scripts/apply-migration-p6.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "next": "16.2.4",
     "next-intl": "^3.26.5",
     "posthog-js": "^1.372.1",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.74.0",
@@ -46,6 +48,7 @@
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.19.17",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^16.6.1",

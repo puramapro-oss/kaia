@@ -1,8 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { stripe, getPlan } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { TRIAL_DAYS } from "@/lib/constants";
+import { readInfluencerCookie } from "@/lib/influencer/cookie";
+import { readReferralCookie } from "@/lib/referral/cookie";
 
 const Body = z.object({
   plan: z.enum(["monthly", "yearly"]),
@@ -57,6 +60,14 @@ export async function POST(request: NextRequest) {
   const origin =
     request.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://kaia.purama.dev";
 
+  // Lis les cookies tracking si non fournis explicitement dans le body
+  const cookieStore = await cookies();
+  const fromInfCookie = readInfluencerCookie(cookieStore);
+  const fromRefCookie = readReferralCookie(cookieStore);
+  const influencerLinkId =
+    parsed.data.influencerLinkId ?? fromInfCookie?.linkId ?? "";
+  const referralCode = parsed.data.referralCode ?? fromRefCookie?.code ?? "";
+
   let customerId = profile?.stripe_customer_id ?? null;
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -83,8 +94,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           user_id: user.id,
           app_slug: "kaia",
-          influencer_link_id: parsed.data.influencerLinkId ?? "",
-          referral_code: parsed.data.referralCode ?? "",
+          influencer_link_id: influencerLinkId,
+          referral_code: referralCode,
         },
       },
       success_url: `${origin}/dashboard?checkout=success`,
@@ -93,7 +104,8 @@ export async function POST(request: NextRequest) {
       metadata: {
         user_id: user.id,
         app_slug: "kaia",
-        influencer_link_id: parsed.data.influencerLinkId ?? "",
+        influencer_link_id: influencerLinkId,
+        referral_code: referralCode,
       },
     });
     return NextResponse.json({ url: session.url });

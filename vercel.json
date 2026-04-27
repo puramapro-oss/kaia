@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/weekly-ritual",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/influencer-payout",
+      "schedule": "0 3 1 * *"
     }
   ]
 }

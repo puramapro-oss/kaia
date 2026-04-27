@@ -8,6 +8,8 @@ const PUBLIC_PATHS = [
   "/login",
   "/signup",
   "/forgot-password",
+  "/influencers",
+  "/influencers/kit",
   "/legal/cgu",
   "/legal/privacy",
   "/legal/contests-rules",
@@ -22,6 +24,7 @@ const PUBLIC_PREFIXES = [
   "/i/",
   "/r/",
   "/go/",
+  "/influencers/",
 ];
 
 const STATIC_FILE = /\.(svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|map|woff2?|ttf|otf|mp3|mp4|webm)$/i;
