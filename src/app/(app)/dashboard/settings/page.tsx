@@ -48,17 +48,17 @@ const SECTIONS: SettingsLink[] = [
   {
     href: "/dashboard/settings/accessibility",
     label: "Accessibilité",
-    description: "Contraste, dyslexie, sous-titres, lecture audio.",
+    description: "Contraste, dyslexie, animations réduites, descriptions audio.",
     icon: Eye,
-    available: false,
+    available: true,
     accent: "#7d8aa8",
   },
   {
     href: "/dashboard/settings/language",
     label: "Langue",
-    description: "Interface et voix guidées (16 langues principales).",
+    description: "35 langues disponibles. Détection auto + override manuel.",
     icon: Languages,
-    available: false,
+    available: true,
     accent: "var(--color-kaia-green-soft)",
   },
 ];

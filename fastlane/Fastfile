@@ -1,0 +1,98 @@
+# KAÏA — Fastlane root Fastfile (P10)
+#
+# Lanes:
+#   bundle exec fastlane ios beta       → build IPA + upload TestFlight
+#   bundle exec fastlane ios release    → submit to App Store review
+#   bundle exec fastlane ios screenshots → snapshot 6.7" + 5.5" + iPad 12.9"
+#   bundle exec fastlane android beta   → AAB + upload Play closed track
+#   bundle exec fastlane android release → promote to production track
+#
+# Prérequis :
+#   - cap sync ios && cap sync android (au moins 1 fois)
+#   - APP_STORE_CONNECT_API_KEY_PATH ou Apple ID + app-specific password
+#   - GOOGLE_SERVICE_ACCOUNT (chemin vers ./google-service-account.json)
+#   - APPLE_TEAM_ID dans .env.secrets
+
+default_platform(:ios)
+
+before_all do
+  ensure_env_vars(
+    env_vars: [],
+    optional: ["APP_STORE_CONNECT_API_KEY_PATH", "APPLE_TEAM_ID", "GOOGLE_SERVICE_ACCOUNT"]
+  ) rescue UI.message("ℹ️ env vars optionnelles manquantes — certaines lanes échoueront")
+end
+
+platform :ios do
+  desc "Build IPA + upload TestFlight"
+  lane :beta do
+    setup_ci if ENV["CI"]
+    build_app(
+      workspace: "ios/App/App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "build/ios",
+      clean: true,
+    )
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      changelog: "Multisensoriel + 35 langues + native iOS — voir release notes.",
+    )
+  end
+
+  desc "Submit to App Store review"
+  lane :release do
+    capture_screenshots(skip_open_summary: true) if ENV["KAIA_GENERATE_SCREENSHOTS"]
+    build_app(
+      workspace: "ios/App/App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "build/ios",
+      clean: true,
+    )
+    upload_to_app_store(
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      skip_metadata: false,
+      skip_screenshots: true,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false,
+        content_rights_contains_third_party_content: false,
+      },
+    )
+  end
+
+  desc "Capture screenshots iPhone 6.7 + 5.5 + iPad 12.9"
+  lane :screenshots do
+    capture_screenshots(workspace: "ios/App/App.xcworkspace", scheme: "AppUITests")
+    upload_to_app_store(skip_binary_upload: true, skip_metadata: true)
+  end
+end
+
+platform :android do
+  desc "AAB + upload Play closed testing"
+  lane :beta do
+    gradle(
+      project_dir: "android",
+      task: "bundle",
+      build_type: "Release",
+      properties: { "android.injected.signing.store.file" => ENV["ANDROID_KEYSTORE_PATH"] },
+    )
+    upload_to_play_store(
+      track: "internal",
+      aab: "android/app/build/outputs/bundle/release/app-release.aab",
+      json_key: ENV["GOOGLE_SERVICE_ACCOUNT"],
+      release_status: "draft",
+    )
+  end
+
+  desc "Promote to production track"
+  lane :release do
+    upload_to_play_store(
+      track: "production",
+      track_promote_to: "production",
+      json_key: ENV["GOOGLE_SERVICE_ACCOUNT"],
+    )
+  end
+end

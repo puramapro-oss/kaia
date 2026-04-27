@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { GoogleButton } from "./GoogleButton";
+import { AppleButton } from "./AppleButton";
 import { createClient } from "@/lib/supabase/client";
 
 const SignupSchema = z.object({
@@ -70,7 +71,10 @@ export function SignupForm() {
 
   return (
     <div className="space-y-6">
-      <GoogleButton next={next} />
+      <div className="space-y-2.5">
+        <GoogleButton next={next} />
+        <AppleButton next={next} />
+      </div>
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-white/10" />
         <span className="text-[11px] uppercase tracking-widest text-white/35">ou par email</span>

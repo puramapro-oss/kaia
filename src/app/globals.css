@@ -171,3 +171,87 @@ body {
     transition-duration: 0ms;
   }
 }
+
+/* ── Accessibilité P9 (data-attributes posés par A11yProvider) ───── */
+:focus-visible {
+  outline: 2px solid var(--color-kaia-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+[data-a11y-reduce-motion="true"] *,
+[data-a11y-reduce-motion="true"] *::before,
+[data-a11y-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+[data-a11y-large-text="true"] {
+  font-size: 115%;
+}
+
+[data-a11y-high-contrast="true"] {
+  --background: #000000;
+  --foreground: #ffffff;
+  --color-foreground: #ffffff;
+  --color-kaia-accent: #00e5ff;
+  --color-kaia-gold: #ffd400;
+}
+[data-a11y-high-contrast="true"] body {
+  background: #000000 !important;
+}
+[data-a11y-high-contrast="true"] .glass {
+  background: rgba(0, 0, 0, 0.85) !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: none !important;
+}
+[data-a11y-high-contrast="true"] a,
+[data-a11y-high-contrast="true"] button {
+  text-decoration: underline;
+}
+
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("https://fonts.cdnfonts.com/s/68228/OpenDyslexic-Regular.woff") format("woff");
+  font-display: swap;
+}
+
+[data-a11y-dyslexia="true"] body,
+[data-a11y-dyslexia="true"] .font-display {
+  font-family: "OpenDyslexic", var(--font-inter), system-ui, sans-serif !important;
+  letter-spacing: 0.04em;
+  word-spacing: 0.16em;
+  line-height: 1.7;
+}
+
+/* RTL — Adjustments mineurs (CSS logical properties font le gros du job) */
+[dir="rtl"] .ltr-only {
+  display: none;
+}
+[dir="ltr"] .rtl-only {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}

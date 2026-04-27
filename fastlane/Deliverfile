@@ -1,0 +1,51 @@
+# KAÏA — App Store metadata (P10)
+# Cf https://docs.fastlane.tools/actions/deliver/
+
+app_identifier("dev.purama.kaia")
+team_id(ENV["APPLE_TEAM_ID"])
+
+primary_category("Health & Fitness")
+secondary_category("Lifestyle")
+primary_first_sub_category("Mindfulness")
+
+app_review_information(
+  first_name: "Matiss",
+  last_name: "Dornier",
+  phone_number: "+33000000000",
+  email_address: "matiss.frasne@gmail.com",
+  demo_user: "tissma-demo@purama.dev",
+  demo_password: "DemoKaia2026!",
+  notes: <<~NOTES
+    KAÏA = routine multisensorielle quotidienne de bien-être.
+    Le bouton "Continuer" iOS ouvre un Universal Link vers notre web (purama.dev/subscribe)
+    pour la souscription — pas de paiement digital iOS, conforme §3.1.1.
+    Les fonctionnalités principales (respiration, méditation, journal) sont disponibles
+    en plan gratuit. Les récompenses Points sont visibles mais débloquées au paiement.
+    Compte démo : tissma-demo@purama.dev / DemoKaia2026!
+    Aucun claim médical. Disclaimer audio binaural présent (§ Privacy).
+  NOTES
+)
+
+# Localized metadata — auto-générés depuis src/messages/{locale}.json
+# Override possible via fastlane/metadata/{locale}/*.txt si besoin
+
+privacy_url(
+  {
+    "fr-FR" => "https://kaia.purama.dev/legal/privacy",
+    "en-US" => "https://kaia.purama.dev/legal/privacy",
+  },
+)
+
+support_url(
+  {
+    "fr-FR" => "https://kaia.purama.dev/legal/cgu",
+    "en-US" => "https://kaia.purama.dev/legal/cgu",
+  },
+)
+
+marketing_url(
+  {
+    "fr-FR" => "https://kaia.purama.dev",
+    "en-US" => "https://kaia.purama.dev",
+  },
+)

@@ -1,0 +1,28 @@
+# KAÏA — Snapshot config (P10 — capture iOS App Store screenshots)
+# Cf https://docs.fastlane.tools/actions/snapshot/
+
+devices([
+  "iPhone 15 Pro Max",  # 6.7"
+  "iPhone 8 Plus",      # 5.5" (toujours requis Apple)
+  "iPad Pro (12.9-inch) (6th generation)",
+])
+
+languages([
+  "fr-FR",
+  "en-US",
+  "es-ES",
+  "de-DE",
+  "it-IT",
+  "ar-SA",
+  "zh-Hans",
+  "ja",
+  "pt-BR",
+])
+
+scheme("AppUITests")
+output_directory("./fastlane/screenshots")
+clear_previous_screenshots(true)
+override_status_bar(true)
+launch_arguments(["-FASTLANE_SNAPSHOT YES"])
+stop_after_first_error(false)
+concurrent_simulators(false)
