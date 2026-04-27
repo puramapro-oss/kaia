@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { getEarnAmount } from "@/lib/tokens/earn-rules";
+import { joinRitualWithFallback } from "@/lib/community/atomic";
 
 export const runtime = "nodejs";
 
@@ -37,30 +38,29 @@ export async function POST(
     return NextResponse.json({ error: "Trop de tentatives. Réessaie." }, { status: 429 });
   }
 
-  const { data, error } = await supabase.rpc("join_weekly_ritual", {
-    p_ritual_id: parsed.data.ritualId,
-  });
-
-  if (error) {
-    if (error.code === "P0002") {
+  let result;
+  try {
+    result = await joinRitualWithFallback(supabase, user.id, parsed.data.ritualId);
+  } catch (err) {
+    const e = err as { code?: string; message?: string };
+    if (e.code === "P0002") {
       return NextResponse.json({ error: "Rituel introuvable." }, { status: 404 });
     }
-    if (error.code === "P0010") {
+    if (e.code === "P0010") {
       return NextResponse.json({ error: "Le rituel n'a pas encore commencé." }, { status: 409 });
     }
-    if (error.code === "P0011") {
+    if (e.code === "P0011") {
       return NextResponse.json({ error: "Le rituel est terminé." }, { status: 410 });
     }
     return NextResponse.json(
-      { error: "Participation impossible.", details: error.message },
+      { error: "Participation impossible.", details: e.message ?? "unknown" },
       { status: 500 },
     );
   }
 
-  const result = Array.isArray(data) ? data[0] : data;
-  const isFirstJoin = result?.status === "joined";
+  const isFirstJoin = result.status === "joined";
 
-  // Si vraiment nouveau → tokens +30
+  // Tokens +30 si vraiment nouvelle participation
   let tokensCredited = 0;
   if (isFirstJoin) {
     const admin = createServiceClient();
@@ -78,13 +78,13 @@ export async function POST(
     if (!tokensErr) {
       tokensCredited = amount;
     }
-    // Si l'idempotency frappe (déjà crédité), on ignore silencieusement.
+    // Idempotency hit (déjà crédité) → silencieux.
   }
 
   return NextResponse.json({
-    status: result?.status ?? "joined",
-    participantsCount: result?.participants_count ?? 0,
+    status: result.status,
+    participantsCount: result.participantsCount,
     tokensCredited,
-    alreadyJoined: !!result?.already_joined,
+    alreadyJoined: result.alreadyJoined,
   });
 }

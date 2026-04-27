@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { moderatePost, MAX_POST_LENGTH } from "@/lib/community/moderate";
+import { hasLiked } from "@/lib/community/atomic";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -69,19 +70,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Récupérer les likes du user courant
-  let liked = new Set<string>();
-  if ((data ?? []).length > 0) {
-    const { data: reacts } = await supabase
-      .from("community_reactions")
-      .select("post_id")
-      .eq("user_id", user.id)
-      .in(
-        "post_id",
-        (data ?? []).map((p) => p.id),
-      );
-    liked = new Set((reacts ?? []).map((r) => r.post_id));
-  }
+  // Récupérer les likes du user courant (RPC-aware avec fallback)
+  const liked = await hasLiked(supabase, user.id, (data ?? []).map((p) => p.id));
 
   const posts = (data ?? []).map((p) => ({
     id: p.id,

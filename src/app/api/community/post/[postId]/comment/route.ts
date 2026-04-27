@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { moderatePost, MAX_POST_LENGTH } from "@/lib/community/moderate";
+import { bumpCommentsCountWithFallback } from "@/lib/community/atomic";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -35,11 +36,15 @@ export async function GET(
     return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
   }
 
+  // hidden=false exclut déjà les sentinels (like/flag → hidden=true). Sécurité supplémentaire :
+  // on filtre les contenus marqueurs au cas où.
   const { data, error } = await supabase
     .from("community_comments")
     .select("id, user_id, content, created_at")
     .eq("post_id", parsed.data.postId)
     .eq("hidden", false)
+    .not("content", "like", "__like_by_%")
+    .not("content", "like", "__flag_by_%")
     .order("created_at", { ascending: true })
     .limit(50);
 
@@ -140,14 +145,8 @@ export async function POST(
     );
   }
 
-  // Increment counter via RPC atomique
-  const { data: counter, error: rpcErr } = await supabase.rpc("bump_post_comments_count", {
-    p_post_id: parsedParams.data.postId,
-    p_delta: 1,
-  });
-  if (rpcErr && rpcErr.code === "P0002") {
-    // Post supprimé entre temps — on ne bloque pas, le comment cascade-delete a peut-être supprimé.
-  }
+  // Increment counter atomique (RPC si dispo, fallback service-role sinon)
+  const newCount = await bumpCommentsCountWithFallback(supabase, parsedParams.data.postId, 1);
 
   return NextResponse.json({
     comment: {
@@ -155,6 +154,6 @@ export async function POST(
       content: inserted.content,
       createdAt: inserted.created_at,
     },
-    commentsCount: typeof counter === "number" ? counter : null,
+    commentsCount: newCount,
   });
 }

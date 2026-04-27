@@ -1,17 +1,19 @@
 /**
- * POST /api/community/post/[postId]/like — toggle like via RPC apply_reaction (atomique).
+ * POST /api/community/post/[postId]/like — toggle like.
+ * Utilise apply_reaction RPC si la migration P5 est appliquée, sinon fallback service-role.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { applyReactionWithFallback } from "@/lib/community/atomic";
 
 export const runtime = "nodejs";
 
 const Params = z.object({ postId: z.string().uuid() });
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   ctx: { params: Promise<{ postId: string }> },
 ) {
   const supabase = await createClient();
@@ -33,25 +35,20 @@ export async function POST(
     return NextResponse.json({ error: "Trop de likes. Reviens dans 1 min." }, { status: 429 });
   }
 
-  const { data, error } = await supabase.rpc("apply_reaction", {
-    p_post_id: parsed.data.postId,
-    p_kind: "like",
-  });
-
-  if (error) {
-    if (error.code === "P0002") {
+  try {
+    const result = await applyReactionWithFallback(supabase, user.id, parsed.data.postId);
+    return NextResponse.json({
+      action: result.action,
+      reactionsCount: result.reactionsCount,
+    });
+  } catch (err) {
+    const e = err as { code?: string; message?: string };
+    if (e.code === "P0002") {
       return NextResponse.json({ error: "Post introuvable." }, { status: 404 });
     }
     return NextResponse.json(
-      { error: "Like impossible.", details: error.message },
+      { error: "Like impossible.", details: e.message ?? "unknown" },
       { status: 500 },
     );
   }
-
-  // RPC retourne un row [{action, reactions_count}]
-  const result = Array.isArray(data) ? data[0] : data;
-  return NextResponse.json({
-    action: result?.action ?? "liked",
-    reactionsCount: result?.reactions_count ?? 0,
-  });
 }

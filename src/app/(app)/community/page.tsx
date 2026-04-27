@@ -3,8 +3,8 @@ import { Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import { Composer } from "@/components/community/Composer";
-import { PostCard, type CommunityPost } from "@/components/community/PostCard";
+import { type CommunityPost } from "@/components/community/PostCard";
+import { hasLiked } from "@/lib/community/atomic";
 import { Feed } from "./Feed";
 
 export const metadata = {
@@ -45,16 +45,8 @@ async function loadInitialPosts(currentUserId: string): Promise<CommunityPost[]>
     ]),
   );
 
-  // Likes user courant
-  const { data: reacts } = await supabase
-    .from("community_reactions")
-    .select("post_id")
-    .eq("user_id", currentUserId)
-    .in(
-      "post_id",
-      posts.map((p) => p.id),
-    );
-  const liked = new Set((reacts ?? []).map((r) => r.post_id));
+  // Likes user courant (RPC-aware avec fallback service-role)
+  const liked = await hasLiked(supabase, currentUserId, posts.map((p) => p.id));
 
   return posts.map((p) => ({
     id: p.id,

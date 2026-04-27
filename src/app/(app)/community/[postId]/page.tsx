@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { PostCard, type CommunityPost } from "@/components/community/PostCard";
 import { CommentList } from "@/components/community/CommentList";
+import { hasLiked } from "@/lib/community/atomic";
 
 export const dynamic = "force-dynamic";
 
@@ -43,12 +44,8 @@ export default async function PostDetailPage({
     .eq("id", post.user_id)
     .maybeSingle();
 
-  const { data: reacts } = await supabase
-    .from("community_reactions")
-    .select("post_id")
-    .eq("user_id", user.id)
-    .eq("post_id", postId)
-    .maybeSingle();
+  const likedSet = await hasLiked(supabase, user.id, [postId]);
+  const isLiked = likedSet.has(postId);
 
   const card: CommunityPost = {
     id: post.id,
@@ -63,7 +60,7 @@ export default async function PostDetailPage({
       display_name: profile?.full_name ?? null,
       avatar_url: profile?.avatar_url ?? null,
     },
-    isLikedByMe: !!reacts,
+    isLikedByMe: isLiked,
   };
 
   return (
