@@ -12,15 +12,20 @@ export const dynamic = "force-dynamic";
  * → renvoie state du trigger handle_new_auth_user + dernière erreur de la
  *   table profiles + version Postgres.
  */
+function trim(value: string | undefined): string | undefined {
+  return value?.replace(/\\n/g, "").trim() || undefined;
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
-  if (!process.env.ADMIN_DB_TOKEN || token !== process.env.ADMIN_DB_TOKEN) {
+  const expected = trim(process.env.ADMIN_DB_TOKEN);
+  if (!expected || token !== expected) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const password = process.env.POSTGRES_PASSWORD;
-  const host = process.env.POSTGRES_HOST ?? "72.62.191.111";
+  const password = trim(process.env.POSTGRES_PASSWORD);
+  const host = trim(process.env.POSTGRES_HOST) ?? "72.62.191.111";
   if (!password) {
     return NextResponse.json({ error: "POSTGRES_PASSWORD missing" }, { status: 500 });
   }
