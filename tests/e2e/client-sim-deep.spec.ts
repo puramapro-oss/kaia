@@ -142,9 +142,10 @@ test.describe("Phase E — Deep prod (signup→DB, OAuth redirect, Stripe URL, l
 
     // simulate logout via Supabase REST signOut
     await context.clearCookies();
-    const res = await page.goto("/home", { waitUntil: "domcontentloaded" });
-    // après clear cookies → /home doit rediriger /login
-    expect(page.url()).toMatch(/\/(login|home)/);
-    expect(res?.status()).toBeLessThan(400);
+    // /home protégé : sans cookies → middleware redirige /login. Webkit interrompt
+    // parfois la navigation initiale ; on laisse le redirect se settle.
+    await page.goto("/home", { waitUntil: "commit" }).catch(() => undefined);
+    await page.waitForURL(/\/(login|home)/, { timeout: 10000 });
+    expect(page.url()).toMatch(/\/login/);
   });
 });
