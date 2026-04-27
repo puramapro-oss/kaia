@@ -30,19 +30,59 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "POSTGRES_PASSWORD missing" }, { status: 500 });
   }
 
-  const client = new Client({
-    host,
-    port: 5432,
-    user: "postgres",
-    password,
-    database: "postgres",
-    ssl: false,
-    statement_timeout: 8000,
-  });
+  // Try multiple supavisor tenant formats + raw postgres
+  const candidates = [
+    { user: "postgres", port: 5432, label: "raw-5432" },
+    { user: "postgres", port: 6543, label: "raw-6543" },
+    { user: "postgres.kaia", port: 5432, label: "kaia-5432" },
+    { user: "postgres.kaia", port: 6543, label: "kaia-6543" },
+    { user: "postgres.purama", port: 5432, label: "purama-5432" },
+    { user: "postgres.postgres", port: 5432, label: "tenant-postgres" },
+    { user: "postgres.default", port: 5432, label: "tenant-default" },
+    { user: "supabase_admin", port: 5432, label: "admin-5432" },
+  ];
 
+  const probeUserParam = url.searchParams.get("user");
+  const probePortParam = url.searchParams.get("port");
+  const queue = probeUserParam
+    ? [{ user: probeUserParam, port: Number(probePortParam ?? 5432), label: "explicit" }]
+    : candidates;
+
+  const probes: Array<{ label: string; user: string; port: number; status: string; error?: string }> = [];
+  let connected: { client: Client; user: string; port: number } | null = null;
+
+  for (const candidate of queue) {
+    const c = new Client({
+      host,
+      port: candidate.port,
+      user: candidate.user,
+      password,
+      database: "postgres",
+      ssl: false,
+      statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
+    });
+    try {
+      await c.connect();
+      probes.push({ ...candidate, status: "OK" });
+      connected = { client: c, user: candidate.user, port: candidate.port };
+      break;
+    } catch (err) {
+      probes.push({
+        ...candidate,
+        status: "FAIL",
+        error: err instanceof Error ? err.message : String(err),
+      });
+      await c.end().catch(() => undefined);
+    }
+  }
+
+  if (!connected) {
+    return NextResponse.json({ ok: false, error: "no_candidate_worked", probes }, { status: 502 });
+  }
+
+  const client = connected.client;
   try {
-    await client.connect();
-
     const fnExists = await client.query(
       `SELECT proname, prosrc FROM pg_proc WHERE proname = 'handle_new_auth_user' LIMIT 1`,
     );
@@ -66,6 +106,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      connected_via: { user: connected.user, port: connected.port },
+      probes,
       version: version.rows[0]?.version,
       function_exists: (fnExists.rowCount ?? 0) > 0,
       function_body_preview: fnExists.rows[0]?.prosrc?.slice(0, 600),
