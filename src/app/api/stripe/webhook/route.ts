@@ -4,6 +4,8 @@ import { stripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { processInfluencerCommission, reverseInfluencerCommission } from "@/lib/influencer/process-commission";
 import { processReferralCommission } from "@/lib/referral/process-commission";
+import { processDonationPaid } from "@/lib/donations/process-paid";
+import { processPurchasePaid } from "@/lib/shop/process-paid";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -139,8 +141,29 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = (session.client_reference_id ?? session.metadata?.user_id) as string | null;
-        if (userId) {
+        const meta = session.metadata ?? {};
+
+        // Donation Stripe one-shot
+        if (meta.kaia_donation_id) {
+          const r = await processDonationPaid({ admin: supabase, session });
+          if (!r.processed && r.reason && r.reason !== "already_succeeded") {
+            console.warn("[KAIA webhook] donation skip:", r.reason);
+          }
+          break;
+        }
+
+        // Achat boutique
+        if (meta.kaia_purchase_id) {
+          const r = await processPurchasePaid({ admin: supabase, session });
+          if (!r.processed && r.reason && r.reason !== "already_paid") {
+            console.warn("[KAIA webhook] purchase skip:", r.reason);
+          }
+          break;
+        }
+
+        // Subscription standard
+        const userId = (session.client_reference_id ?? meta.user_id) as string | null;
+        if (userId && session.mode === "subscription") {
           await supabase
             .from("profiles")
             .update({

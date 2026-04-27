@@ -5,10 +5,12 @@ import {
   Heart,
   Globe2,
   Users,
-  Wallet,
+  ShoppingBag,
+  HandHeart,
   Settings as SettingsIcon,
   Trophy,
   Sunrise,
+  Compass,
 } from "lucide-react";
 import { type ReactNode } from "react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -20,15 +22,17 @@ const NAV = [
   { href: "/impact", label: "Impact", icon: Globe2 },
   { href: "/rituals", label: "Rituel", icon: Sunrise },
   { href: "/community", label: "Communauté", icon: Users },
-  { href: "/dashboard/contests", label: "Concours", icon: Trophy },
-  { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
+  { href: "/contests", label: "Concours", icon: Trophy },
+  { href: "/missions", label: "Missions", icon: Compass },
+  { href: "/shop", label: "Boutique", icon: ShoppingBag },
+  { href: "/donations", label: "Soutenir", icon: HandHeart },
   { href: "/dashboard/settings", label: "Réglages", icon: SettingsIcon },
 ];
 
 const MOBILE_TABS = [
   { href: "/home", label: "Accueil", icon: Home },
   { href: "/routine/builder", label: "Routine", icon: Sparkles },
-  { href: "/rituals", label: "Rituel", icon: Sunrise },
+  { href: "/contests", label: "Concours", icon: Trophy },
   { href: "/community", label: "Cercle", icon: Users },
   { href: "/dashboard/settings", label: "Plus", icon: SettingsIcon },
 ];

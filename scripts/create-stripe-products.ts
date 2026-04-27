@@ -57,6 +57,13 @@ const COUPONS: Stripe.CouponCreateParams[] = [
     percent_off: 30,
     duration: "once",
   },
+  {
+    id: "REFERRAL50",
+    name: "Parrainage KAÏA — 50 % sur le 1er mois",
+    percent_off: 50,
+    duration: "once",
+    metadata: { app_slug: "kaia", purpose: "user_referral_first_month" },
+  },
 ];
 
 async function getOrCreateProduct(): Promise<Stripe.Product> {

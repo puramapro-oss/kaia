@@ -12,6 +12,18 @@
     {
       "path": "/api/cron/influencer-payout",
       "schedule": "0 3 1 * *"
+    },
+    {
+      "path": "/api/cron/contest-weekly",
+      "schedule": "5 20 * * 0"
+    },
+    {
+      "path": "/api/cron/contest-monthly",
+      "schedule": "5 12 1 * *"
+    },
+    {
+      "path": "/api/cron/contest-yearly",
+      "schedule": "35 23 31 12 *"
     }
   ]
 }

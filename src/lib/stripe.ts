@@ -36,6 +36,7 @@ export const KAIA_COUPONS = {
   INFLUENCER_50OFF: "INFLUENCER_50OFF",
   LAUNCH10: "LAUNCH10",
   ANNUAL30: "ANNUAL30",
+  REFERRAL50: "REFERRAL50",
 } as const;
 
 export function getPlan(key: KaiaPlan["key"]): KaiaPlan {
