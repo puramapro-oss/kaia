@@ -14,6 +14,9 @@ const PUBLIC_PATHS = [
   "/legal/privacy",
   "/legal/contests-rules",
   "/legal/disclaimer-medical",
+  "/sitemap.xml",
+  "/robots.txt",
+  "/manifest.webmanifest",
 ];
 
 const PUBLIC_PREFIXES = [
