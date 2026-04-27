@@ -17,6 +17,8 @@ const PUBLIC_PATHS = [
   "/sitemap.xml",
   "/robots.txt",
   "/manifest.webmanifest",
+  "/icon",
+  "/apple-icon",
 ];
 
 const PUBLIC_PREFIXES = [
@@ -28,6 +30,7 @@ const PUBLIC_PREFIXES = [
   "/r/",
   "/go/",
   "/influencers/",
+  "/.well-known/",
 ];
 
 const STATIC_FILE = /\.(svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|map|woff2?|ttf|otf|mp3|mp4|webm)$/i;
