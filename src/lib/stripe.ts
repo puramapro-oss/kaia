@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
 function envTrim(value: string | undefined): string | undefined {
-  return value?.replace(/\\n/g, "").trim() || undefined;
+  return value?.replace(/\\n/g, "").replace(/[\r\n\t ]+$/g, "").replace(/^\s+/, "") || undefined;
 }
 
 export const stripe = new Stripe(envTrim(process.env.STRIPE_SECRET_KEY) ?? "", {

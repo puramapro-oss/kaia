@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: plan.envPriceId, quantity: 1 }],
-    payment_method_types: ["card", "paypal", "link"],
+    payment_method_types: ["card", "link"],
     subscription_data: {
       trial_period_days: TRIAL_DAYS,
       metadata: {
