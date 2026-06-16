@@ -7,6 +7,20 @@ import { processReferralCommission } from "@/lib/referral/process-commission";
 import { processDonationPaid } from "@/lib/donations/process-paid";
 import { processPurchasePaid } from "@/lib/shop/process-paid";
 
+const VITAE_MULTIPLIER: Record<string, number> = {
+  essentiel: 1,
+  infini: 5,
+  legende: 10,
+};
+
+const PRIME_AMOUNTS: Record<"j1" | "j30" | "j60", number> = {
+  j1: 2500,
+  j30: 2500,
+  j60: 5000,
+};
+
+const RETRACTION_DAYS = 30;
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -35,7 +49,43 @@ async function handleInvoicePaymentSucceeded(
 
   if (!userId || amountCents <= 0) return;
 
-  // 1. Influencer commission
+  // 1. Primes J30 / J60 based on invoice sequence
+  const invoiceLine = (invoice as unknown as { billing_reason?: string }).billing_reason;
+  if (invoiceLine === "subscription_cycle") {
+    // Count previous invoices to determine J30 vs J60
+    const { data: primeJ30 } = await admin.from("primes").select("id").eq("user_id", userId).eq("type", "j30").maybeSingle();
+    const { data: primeJ60 } = await admin.from("primes").select("id").eq("user_id", userId).eq("type", "j60").maybeSingle();
+
+    if (!primeJ30) {
+      await admin.from("primes").insert({
+        user_id: userId,
+        type: "j30",
+        amount_cents: PRIME_AMOUNTS.j30,
+        status: "available",
+      });
+    } else if (!primeJ60) {
+      await admin.from("primes").insert({
+        user_id: userId,
+        type: "j60",
+        amount_cents: PRIME_AMOUNTS.j60,
+        status: "available",
+      });
+    }
+  }
+
+  // 2. Unlock J1 prime if retraction period has passed
+  const { data: j1Prime } = await admin
+    .from("primes")
+    .select("id, retraction_deadline")
+    .eq("user_id", userId)
+    .eq("type", "j1")
+    .eq("status", "locked")
+    .maybeSingle();
+  if (j1Prime?.retraction_deadline && new Date(j1Prime.retraction_deadline) < new Date()) {
+    await admin.from("primes").update({ status: "available" }).eq("id", j1Prime.id);
+  }
+
+  // 3. Influencer commission
   if (meta.influencer_link_id) {
     const linkRes = await admin
       .from("influencer_links")
@@ -56,9 +106,8 @@ async function handleInvoicePaymentSucceeded(
     }
   }
 
-  // 2. Referral commission (parrainage particulier)
+  // 4. Referral commission (parrainage particulier)
   if (meta.referral_code) {
-    // Source = first si pas encore de referrals.first_payment_at, sinon recurring
     const { data: existing } = await admin
       .from("referrals")
       .select("first_payment_at")
@@ -161,16 +210,38 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        // Subscription standard
+        // Subscription VITAE
         const userId = (session.client_reference_id ?? meta.user_id) as string | null;
+        const planKey = meta.plan_key as string | null;
         if (userId && session.mode === "subscription") {
+          const multiplier = planKey ? (VITAE_MULTIPLIER[planKey] ?? 1) : 1;
           await supabase
             .from("profiles")
             .update({
-              plan: "active",
+              vitae_plan: planKey ?? null,
+              vitae_multiplier: multiplier,
               stripe_subscription_id: (session.subscription as string) ?? null,
             })
             .eq("id", userId);
+
+          // Prime J1 = 25€ with 30-day retraction lock
+          const retractionDeadline = new Date();
+          retractionDeadline.setDate(retractionDeadline.getDate() + RETRACTION_DAYS);
+          const { data: existingJ1 } = await supabase
+            .from("primes")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("type", "j1")
+            .maybeSingle();
+          if (!existingJ1) {
+            await supabase.from("primes").insert({
+              user_id: userId,
+              type: "j1",
+              amount_cents: PRIME_AMOUNTS.j1,
+              status: "locked",
+              retraction_deadline: retractionDeadline.toISOString(),
+            });
+          }
         }
         break;
       }
@@ -178,20 +249,16 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.user_id;
+        const planKey = sub.metadata?.plan_key ?? null;
         const status = sub.status;
-        const isActive = ["active", "trialing"].includes(status);
         if (userId) {
-          const subItem = sub.items.data[0];
-          const periodEndUnix =
-            (subItem as unknown as { current_period_end?: number })?.current_period_end ?? null;
-          const periodEndIso =
-            periodEndUnix !== null ? new Date(periodEndUnix * 1000).toISOString() : null;
+          const multiplier = planKey ? (VITAE_MULTIPLIER[planKey] ?? 1) : 1;
           await supabase
             .from("profiles")
             .update({
-              plan: isActive ? "active" : status === "canceled" ? "canceled" : "free",
+              vitae_plan: ["active", "trialing"].includes(status) ? planKey : null,
+              vitae_multiplier: ["active", "trialing"].includes(status) ? multiplier : 1,
               stripe_subscription_id: sub.id,
-              subscription_current_period_end: periodEndIso,
             })
             .eq("id", userId);
         }
@@ -203,8 +270,14 @@ export async function POST(request: NextRequest) {
         if (userId) {
           await supabase
             .from("profiles")
-            .update({ plan: "canceled", stripe_subscription_id: null })
+            .update({ vitae_plan: null, vitae_multiplier: 1, stripe_subscription_id: null })
             .eq("id", userId);
+          // Reverse pending primes if still in retraction window
+          await supabase
+            .from("primes")
+            .update({ status: "reversed" })
+            .eq("user_id", userId)
+            .eq("status", "locked");
         }
         await handleSubscriptionDeleted(sub, supabase);
         break;

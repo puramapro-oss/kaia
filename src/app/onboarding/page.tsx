@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import OnboardingWizardV2 from "@/components/onboarding/OnboardingWizardV2";
 
 export const metadata = {
   title: "Bienvenue — KAÏA",
-  description: "90 secondes pour construire ta routine.",
+  description: "Quelques questions pour personnaliser ton expérience du cycle.",
 };
 
 export default async function OnboardingPage() {
@@ -18,13 +18,13 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarded_at")
+    .select("onboarding_completed")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.onboarded_at) {
-    redirect("/home");
+  if (profile?.onboarding_completed) {
+    redirect("/accueil");
   }
 
-  return <OnboardingWizard />;
+  return <OnboardingWizardV2 userId={user.id} />;
 }

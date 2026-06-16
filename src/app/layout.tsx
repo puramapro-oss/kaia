@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces } from "next/font/google";
+import { Inter, Cormorant_Garamond } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTimeZone, getNow } from "next-intl/server";
 import Script from "next/script";
 import { Toaster } from "sonner";
-import { AppBackground } from "@/components/shared/AppBackground";
+import PuramaBackground from "@/components/shared/PuramaBackground";
 import { A11yProvider } from "@/components/shared/A11yProvider";
 import { isLocale, isRtl, BCP47_MAP, type Locale } from "@/i18n/locales";
 import "./globals.css";
@@ -15,43 +15,42 @@ const inter = Inter({
   display: "swap",
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
   display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kaia.purama.dev"),
   title: {
-    default: "KAÏA — Routine multisensorielle pour le bien-être quotidien",
+    default: "KAÏA — Intelligence du cycle féminin",
     template: "%s · KAÏA",
   },
   description:
-    "Respire, bouge, accueille. KAÏA construit avec toi une routine de bien-être courte, sensorielle, durable. Essai 14 jours.",
+    "KAÏA décode ton cycle, anticipe tes phases et t'accompagne au quotidien. Comprends ton corps, vis en accord avec lui. Essai 14 jours.",
   applicationName: "KAÏA",
   authors: [{ name: "SASU PURAMA" }],
   keywords: [
-    "bien-être",
-    "respiration",
-    "méditation",
-    "routine",
-    "wellness",
-    "mindfulness",
-    "gratitude",
-    "sons binauraux",
-    "sommeil",
-    "anxiété",
-    "stress",
+    "cycle féminin",
+    "intelligence cyclique",
+    "phases menstruelles",
+    "santé féminine",
+    "bien-être féminin",
+    "cycle lunaire",
+    "journal cycle",
+    "symptômes cycle",
+    "fertilité naturelle",
+    "mindfulness féminin",
   ],
   openGraph: {
     type: "website",
     siteName: "KAÏA",
     locale: "fr_FR",
-    title: "KAÏA — Routine multisensorielle pour le bien-être quotidien",
+    title: "KAÏA — Intelligence du cycle féminin",
     description:
-      "Respire, bouge, accueille. Une routine sensorielle courte chaque jour.",
+      "Décode ton cycle. Anticipe tes phases. Vis en accord avec ton corps.",
     url: "https://kaia.purama.dev",
     images: [{ url: "/api/og", width: 1200, height: 630, alt: "KAÏA" }],
   },
@@ -67,7 +66,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0f",
+  themeColor: "#0d0d1a",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -99,10 +98,10 @@ const JSON_LD = {
       applicationCategory: "HealthApplication",
       operatingSystem: "Web, iOS, Android",
       description:
-        "Routine multisensorielle quotidienne — respiration, méditation, gratitude, sons binauraux. Essai 14 jours.",
+        "Intelligence du cycle féminin — décode ton cycle, anticipe tes phases, vis en accord avec ton corps. Essai 14 jours.",
       offers: {
         "@type": "Offer",
-        price: "14.99",
+        price: "9.99",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
       },
@@ -126,7 +125,7 @@ export default async function RootLayout({
     <html
       lang={htmlLang}
       dir={dir}
-      className={`${inter.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${inter.variable} ${cormorant.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans text-white">
         <a
@@ -142,7 +141,7 @@ export default async function RootLayout({
           now={now}
         >
           <A11yProvider>
-            <AppBackground />
+            <PuramaBackground />
             <main id="main" className="contents">
               {children}
             </main>

@@ -46,10 +46,10 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const { supabaseResponse, user } = await updateSession(request);
 
-  // Authenticated user landing on /login or /signup → redirect to dashboard
+  // Authenticated user landing on /login or /signup → redirect to V2 home
   if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/accueil";
     url.search = "";
     return NextResponse.redirect(url);
   }

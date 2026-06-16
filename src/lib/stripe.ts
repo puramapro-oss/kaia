@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import type { VitaePlanKey } from "./constants";
 
 function envTrim(value: string | undefined): string | undefined {
   return value?.replace(/\\n/g, "").replace(/[\r\n\t ]+$/g, "").replace(/^\s+/, "") || undefined;
@@ -8,43 +9,115 @@ export const stripe = new Stripe(envTrim(process.env.STRIPE_SECRET_KEY) ?? "", {
   typescript: true,
 });
 
-export interface KaiaPlan {
-  key: "monthly" | "yearly";
+export interface VitaePlan {
+  key: VitaePlanKey;
   priceCents: number;
   priceLabel: string;
-  intervalLabel: string;
+  multiplier: number;
   envPriceId: string;
   trialDays: number;
+  description: string;
 }
 
-export const KAIA_PLANS: KaiaPlan[] = [
+export const VITAE_PLANS: VitaePlan[] = [
   {
-    key: "monthly",
-    priceCents: 1499,
-    priceLabel: "14,99 €",
-    intervalLabel: "/mois",
-    envPriceId: process.env.STRIPE_PRICE_MONTHLY ?? "",
+    key: "essentiel",
+    priceCents: 999,
+    priceLabel: "9,99 €",
+    multiplier: 1,
+    envPriceId: process.env.STRIPE_PRICE_ESSENTIEL ?? "",
     trialDays: 14,
+    description: "Accès essentiel — 1× multiplicateur KARMA",
   },
   {
-    key: "yearly",
-    priceCents: 12591,
-    priceLabel: "125,91 €",
-    intervalLabel: "/an",
-    envPriceId: process.env.STRIPE_PRICE_YEARLY ?? "",
+    key: "infini",
+    priceCents: 4999,
+    priceLabel: "49,99 €",
+    multiplier: 5,
+    envPriceId: process.env.STRIPE_PRICE_INFINI ?? "",
     trialDays: 14,
+    description: "Accès infini — 5× multiplicateur KARMA",
+  },
+  {
+    key: "legende",
+    priceCents: 9999,
+    priceLabel: "99,99 €",
+    multiplier: 10,
+    envPriceId: process.env.STRIPE_PRICE_LEGENDE ?? "",
+    trialDays: 14,
+    description: "Accès légende — 10× multiplicateur KARMA",
   },
 ];
 
-export const KAIA_COUPONS = {
-  INFLUENCER_50OFF: "INFLUENCER_50OFF",
-  LAUNCH10: "LAUNCH10",
-  ANNUAL30: "ANNUAL30",
-  REFERRAL50: "REFERRAL50",
-} as const;
+export function getVitaePlan(key: VitaePlanKey): VitaePlan | undefined {
+  return VITAE_PLANS.find((p) => p.key === key);
+}
 
-export function getPlan(key: KaiaPlan["key"]): KaiaPlan {
-  const plan = KAIA_PLANS.find((p) => p.key === key);
-  if (!plan) throw new Error(`Unknown KAÏA plan: ${key}`);
-  return plan;
+export async function createCheckoutSession(
+  userId: string,
+  planKey: VitaePlanKey,
+  returnUrl: string
+): Promise<string> {
+  const plan = getVitaePlan(planKey);
+  if (!plan) throw new Error(`Plan inconnu: ${planKey}`);
+  if (!plan.envPriceId) throw new Error(`Price ID manquant pour: ${planKey}`);
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: plan.envPriceId, quantity: 1 }],
+    subscription_data: {
+      trial_period_days: plan.trialDays,
+      metadata: { user_id: userId, plan_key: planKey, app: "kaia" },
+    },
+    metadata: { user_id: userId, plan_key: planKey, app: "kaia" },
+    success_url: `${returnUrl}?checkout=success&plan=${planKey}`,
+    cancel_url: `${returnUrl}?checkout=canceled`,
+    allow_promotion_codes: true,
+  });
+
+  if (!session.url) throw new Error("Stripe session URL manquante");
+  return session.url;
+}
+
+export async function getCustomerPortalUrl(
+  customerId: string,
+  returnUrl: string
+): Promise<string> {
+  const session = await stripe.billingPortal.sessions.create({
+    customer: customerId,
+    return_url: returnUrl,
+  });
+  return session.url;
+}
+
+export async function createConnectAccountSession(accountId: string): Promise<string> {
+  const session = await stripe.accountSessions.create({
+    account: accountId,
+    components: {
+      account_onboarding: { enabled: true },
+      account_management: { enabled: true },
+      payouts: { enabled: true },
+      balances: { enabled: true },
+    },
+  });
+  return session.client_secret;
+}
+
+export async function createConnectAccount(
+  email: string,
+  userId: string
+): Promise<string> {
+  const account = await stripe.accounts.create({
+    type: "express",
+    country: "FR",
+    email,
+    capabilities: { transfers: { requested: true } },
+    controller: {
+      fees: { payer: "account" },
+      losses: { payments: "application" },
+      stripe_dashboard: { type: "none" },
+    },
+    metadata: { user_id: userId, app: "kaia" },
+  });
+  return account.id;
 }

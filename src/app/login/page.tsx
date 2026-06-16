@@ -9,7 +9,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Bon retour."
-      subtitle="Reprends ta routine là où tu l'as laissée."
+      subtitle="Retrouve ton cycle là où tu l'as laissé."
       footer={
         <p>
           Pas encore de compte ?{" "}

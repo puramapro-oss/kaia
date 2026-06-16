@@ -20,7 +20,7 @@ const SignupSchema = z.object({
 export function SignupForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") ?? "/dashboard";
+  const next = params.get("next") ?? "/accueil";
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
