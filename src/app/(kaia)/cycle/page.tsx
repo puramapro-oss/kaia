@@ -1,16 +1,115 @@
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
+import { detectPhase, getCycleDay } from "@/lib/cycle/phases";
+import PhaseCard from "@/components/cycle/PhaseCard";
+import LunarCalendar from "@/components/cycle/LunarCalendar";
+import CycleInput from "@/components/cycle/CycleInput";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Mon Cycle — KAÏA" };
 
-export default function CyclePage() {
+export default async function CyclePage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("cycle_start_date, cycle_duration")
+    .eq("id", user.id)
+    .single();
+
+  const cycleStartDate = profile?.cycle_start_date;
+  const cycleDuration = profile?.cycle_duration || 28;
+
+  let currentPhase = null;
+  let cycleDay = 0;
+  let lunaRecommendation = null;
+
+  if (cycleStartDate) {
+    const startDate = new Date(cycleStartDate);
+    cycleDay = getCycleDay(startDate);
+    currentPhase = detectPhase(cycleDay, cycleDuration);
+
+    // Fetch LUNA recommendation
+    try {
+      const recRes = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/api/luna/recommend`, {
+        cache: "no-store",
+      });
+      if (recRes.ok) {
+        const recData = await recRes.json();
+        lunaRecommendation = recData.recommendation;
+      }
+    } catch {
+      // Ignore if API fails
+    }
+  }
+
   return (
-    <div className="px-5 py-8 max-w-2xl mx-auto">
-      <h1 className="font-display text-3xl font-semibold gradient-kaia-text mb-6">Mon Cycle</h1>
-      <div className="glass rounded-2xl p-6">
-        <p className="text-[var(--foreground-muted)] text-sm">
-          Le suivi de cycle arrive en P2 — phases, symptômes, notes chiffrées.
-        </p>
-      </div>
+    <div className="px-5 py-8 max-w-4xl mx-auto space-y-6">
+      <h1 className="font-cormorant text-4xl font-semibold text-kaia-moon">Mon Cycle</h1>
+
+      {!cycleStartDate ? (
+        <ClientCycleInput />
+      ) : (
+        <>
+          {/* Phase Card */}
+          {currentPhase && <PhaseCard phase={currentPhase} />}
+
+          {/* Lunar Calendar */}
+          {cycleStartDate && (
+            <LunarCalendar startDate={new Date(cycleStartDate)} cycleDay={cycleDay} />
+          )}
+
+          {/* Journal du jour button */}
+          <Link
+            href="/cycle/journal"
+            className="block bg-white/5 backdrop-blur-xl border border-white/8 rounded-2xl p-6 hover:bg-white/10 transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h3 className="text-lg font-cormorant font-semibold text-kaia-moon group-hover:text-kaia-gold transition-colors">
+                  Journal du jour
+                </h3>
+                <p className="text-sm text-white/60">
+                  Note tes symptômes, humeur, énergie
+                </p>
+              </div>
+              <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+          </Link>
+
+          {/* LUNA recommendation */}
+          {lunaRecommendation && (
+            <div className="bg-gradient-to-br from-kaia-moon/10 to-kaia-gold/10 border border-kaia-moon/20 rounded-2xl p-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🌙</span>
+                <h3 className="text-lg font-cormorant font-semibold text-kaia-moon">
+                  Recommandation de LUNA
+                </h3>
+              </div>
+              <p className="text-white/80 leading-relaxed">{lunaRecommendation}</p>
+            </div>
+          )}
+        </>
+      )}
     </div>
+  );
+}
+
+function ClientCycleInput() {
+  return (
+    <CycleInput
+      onSaved={() => {
+        window.location.reload();
+      }}
+    />
   );
 }
