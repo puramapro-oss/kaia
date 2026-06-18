@@ -28,5 +28,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { supabaseResponse, user };
+  // Statut de bannissement (fail-open : toute erreur → non banni, jamais de
+  // verrouillage massif sur un hoquet DB).
+  let bannedAt: string | null = null;
+  if (user) {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("banned_at")
+        .eq("id", user.id)
+        .maybeSingle();
+      bannedAt = (data?.banned_at as string | null) ?? null;
+    } catch {
+      bannedAt = null;
+    }
+  }
+
+  return { supabaseResponse, user, bannedAt };
 }

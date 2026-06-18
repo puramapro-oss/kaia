@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { evaluateBanGate, BANNED_PATH } from "@/lib/admin/ban-gate";
 
 const PUBLIC_PATHS = [
   "/",
   "/pricing",
   "/manifesto",
+  BANNED_PATH,
   "/login",
   "/signup",
   "/forgot-password",
@@ -45,7 +47,17 @@ function isPublic(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const { supabaseResponse, user } = await updateSession(request);
+  const { supabaseResponse, user, bannedAt } = await updateSession(request);
+
+  // Utilisateur banni → /banned (sauf route publique / déjà sur /banned, pour
+  // éviter une boucle et permettre la déconnexion).
+  const ban = evaluateBanGate({ bannedAt, pathname, isPublic: isPublic(pathname) });
+  if (ban.blocked) {
+    const url = request.nextUrl.clone();
+    url.pathname = ban.redirectTo!;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
 
   // Authenticated user landing on /login or /signup → redirect to V2 home
   if (user && (pathname === "/login" || pathname === "/signup")) {
