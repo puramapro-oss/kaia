@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Settings, CreditCard, HelpCircle, LogOut, Star } from "lucide-react";
+import { Settings, CreditCard, HelpCircle, LogOut, Star, Target, Coins, Trophy, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "Moi — KAÏA" };
 
@@ -46,13 +46,33 @@ export default async function MoiPage() {
         </div>
       </div>
 
-      {/* Menu */}
+      {/* KARMA menu */}
+      <div className="glass rounded-2xl overflow-hidden divide-y divide-white/5">
+        <Link href="/moi/missions" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <Target size={18} className="text-[var(--kaia-moon)]" strokeWidth={1.5} />
+          <span className="text-sm">Missions</span>
+        </Link>
+        <Link href="/moi/karma" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <Coins size={18} className="text-[var(--kaia-gold)]" strokeWidth={1.5} />
+          <span className="text-sm">KARMA &amp; Jeux</span>
+        </Link>
+        <Link href="/moi/concours" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <Trophy size={18} className="text-[var(--kaia-moon)]" strokeWidth={1.5} />
+          <span className="text-sm">Concours</span>
+        </Link>
+        <Link href="/moi/parrainage" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <Users size={18} className="text-[var(--foreground-muted)]" strokeWidth={1.5} />
+          <span className="text-sm">Parrainage</span>
+        </Link>
+      </div>
+
+      {/* Settings menu */}
       <div className="glass rounded-2xl overflow-hidden divide-y divide-white/5">
         <Link href="/moi/reglages" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
           <Settings size={18} className="text-[var(--foreground-muted)]" strokeWidth={1.5} />
           <span className="text-sm">Réglages</span>
         </Link>
-        <Link href="/pricing" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+        <Link href="/moi/abonnement" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
           <CreditCard size={18} className="text-[var(--foreground-muted)]" strokeWidth={1.5} />
           <span className="text-sm">Mon abonnement VITAE</span>
         </Link>
