@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/admin";
+import UserBanButton from "./UserBanButton";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function AdminUsersPage({
 
   let req = admin
     .from("profiles")
-    .select("id, email, full_name, plan, awakening_level, created_at, onboarded_at")
+    .select("id, email, full_name, plan, awakening_level, created_at, onboarded_at, banned_at")
     .order("created_at", { ascending: false })
     .limit(100);
   if (query) {
@@ -27,6 +28,12 @@ export default async function AdminUsersPage({
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <h1 className="font-display text-2xl">Utilisateurs ({list.length})</h1>
+        <a
+          href="/api/admin/users/export"
+          className="rounded-lg bg-white/10 hover:bg-white/20 text-sm px-3 py-1.5"
+        >
+          Export CSV
+        </a>
         <form className="flex gap-2">
           <input
             type="search"
@@ -50,6 +57,7 @@ export default async function AdminUsersPage({
               <th className="py-2.5 px-4">Niveau</th>
               <th className="py-2.5 px-4">Inscrit</th>
               <th className="py-2.5 px-4">Onboardé</th>
+              <th className="py-2.5 px-4">Statut</th>
             </tr>
           </thead>
           <tbody>
@@ -76,6 +84,9 @@ export default async function AdminUsersPage({
                   {u.onboarded_at
                     ? new Date(u.onboarded_at as string).toLocaleDateString("fr-FR")
                     : "—"}
+                </td>
+                <td className="py-2 px-4">
+                  <UserBanButton userId={u.id as string} banned={Boolean(u.banned_at)} />
                 </td>
               </tr>
             ))}
