@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, Sparkles } from "lucide-react";
 import { GUIDAGE_MODES } from "@/lib/cercles/guidage-modes";
 
 export const metadata: Metadata = { title: "Cercles — KAÏA" };
@@ -28,6 +28,45 @@ export default function CerclesPage() {
       )}
 
       <div className="space-y-4">
+        <Link href="/core" className="block">
+          <div className="glass rounded-2xl p-6 hover:bg-[var(--kaia-moon)]/10 transition-colors cursor-pointer">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">🌍</div>
+              <div className="flex-1">
+                <h2 className="font-display text-xl font-medium mb-2">C.O.R.E.</h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-3">
+                  Événements collectifs synchronisés — Maintenant, 24h, 7 jours
+                </p>
+                <div className="flex items-center gap-2 text-[var(--kaia-moon)] text-sm font-medium">
+                  <span>Rejoindre</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/ar" className="block">
+          <div className="glass rounded-2xl p-6 hover:bg-[var(--kaia-moon)]/10 transition-colors cursor-pointer">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">🪞</div>
+              <div className="flex-1">
+                <h2 className="font-display text-xl font-medium mb-2 flex items-center gap-2">
+                  Miroir Énergétique
+                  <Sparkles className="w-4 h-4 text-[var(--kaia-gold)]" />
+                </h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-3">
+                  Expérience de présence en réalité augmentée
+                </p>
+                <div className="flex items-center gap-2 text-[var(--kaia-moon)] text-sm font-medium">
+                  <span>Explorer</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Link>
+
         <Link href="/cercles/communaute" className="block">
           <div className="glass rounded-2xl p-6 hover:bg-[var(--kaia-moon)]/10 transition-colors cursor-pointer">
             <div className="flex items-start gap-4">

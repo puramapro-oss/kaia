@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { type CommunityPost } from "@/components/community/PostCard";
 import { hasLiked } from "@/lib/community/atomic";
 import { Feed } from "./Feed";
+import AdBanner from "@/components/ads/AdBanner";
 
 export const metadata = {
   title: "Communauté — KAÏA",
@@ -85,6 +86,8 @@ export default async function CommunityPage() {
           Partages, ressentis, encouragements. 280 caractères. Modération bienveillante.
         </p>
       </header>
+
+      <AdBanner placement="feed" />
 
       <Suspense fallback={null}>
         <Feed initialPosts={initialPosts} />

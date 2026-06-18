@@ -20,7 +20,25 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(self), geolocation=(self), accelerometer=(self), gyroscope=(self)",
+            value: "camera=(self), microphone=(self), geolocation=(self), accelerometer=(self), gyroscope=(self)",
+          },
+          {
+            // CSP volontairement permissive sur script/style (Next App Router sans nonce,
+            // Tailwind inline) mais connect/frame/img restreints aux origines connues.
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://eu.i.posthog.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://auth.purama.dev wss://auth.purama.dev https://*.supabase.co https://eu.i.posthog.com https://demotiles.maplibre.org https://*.maplibre.org https://api.stripe.com",
+              "frame-src 'self' https://js.stripe.com",
+              "worker-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
           },
         ],
       },

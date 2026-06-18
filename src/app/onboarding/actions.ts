@@ -7,6 +7,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { ROUTINE_GOALS } from "@/lib/practices/categories";
 import { SUPPORTED_LOCALES, DAILY_TOKEN_CAP } from "@/lib/constants";
 import { getEarnAmount } from "@/lib/tokens/earn-rules";
+import { sendKaiaEmail } from "@/lib/email/kaia-emails";
+import { signUnsubToken } from "@/lib/email/unsub-token";
 
 const Schema = z.object({
   locale: z.enum(SUPPORTED_LOCALES),
@@ -49,7 +51,7 @@ export async function completeOnboarding(input: z.infer<typeof Schema>): Promise
   // Vérifie qu'on n'est pas déjà onboarded (idempotency).
   const { data: existing } = await supabase
     .from("profiles")
-    .select("onboarded_at")
+    .select("onboarded_at, full_name")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -108,6 +110,21 @@ export async function completeOnboarding(input: z.infer<typeof Schema>): Promise
     });
     const r2Row = Array.isArray(r2) ? r2[0] : r2;
     if (r2Row?.applied) awarded += firstRoutineDelta;
+
+    // Email de bienvenue (J0) — fire-and-forget : ne doit JAMAIS faire échouer
+    // l'onboarding. No-op gracieux sans RESEND_API_KEY.
+    if (user.email) {
+      try {
+        await sendKaiaEmail({
+          to: user.email,
+          kind: "welcome",
+          unsubToken: signUnsubToken(user.id),
+          firstName: existing?.full_name?.trim().split(/\s+/)[0],
+        });
+      } catch (err) {
+        console.error("Welcome email error (non-bloquant):", err);
+      }
+    }
   }
 
   revalidatePath("/", "layout");
