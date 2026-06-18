@@ -26,6 +26,7 @@ const PUBLIC_PREFIXES = [
   "/auth/callback",
   "/_next/",
   "/legal/",
+  "/cycle/transmission/rejoindre",
   "/i/",
   "/r/",
   "/go/",

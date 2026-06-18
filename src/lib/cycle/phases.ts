@@ -122,6 +122,18 @@ export function detectPhase(cycleDay: number, cycleDuration = 28): PhaseInfo {
   };
 }
 
+/**
+ * Phase courante d'une utilisatrice à partir de son profil. Défaut "folliculaire"
+ * si le cycle n'est pas renseigné. Source unique pour pages + API.
+ */
+export function getPhaseFromProfile(
+  profile: { cycle_start_date?: string | null; cycle_duration?: number | null } | null | undefined
+): CyclePhase {
+  if (!profile?.cycle_start_date) return "folliculaire";
+  const day = getCycleDay(new Date(profile.cycle_start_date));
+  return detectPhase(day, profile.cycle_duration || 28).phase;
+}
+
 export function getCycleDay(startDate: Date, today = new Date()): number {
   const diffMs = today.getTime() - startDate.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));

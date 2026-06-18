@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Settings, CreditCard, HelpCircle, LogOut, Star, Target, Coins, Trophy, Users } from "lucide-react";
+import { Settings, CreditCard, HelpCircle, LogOut, Star, Target, Coins, Trophy, Users, Wallet, Globe2, HeartHandshake, FileText } from "lucide-react";
 
 export const metadata: Metadata = { title: "Moi — KAÏA" };
 
@@ -63,6 +63,22 @@ export default async function MoiPage() {
         <Link href="/moi/parrainage" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
           <Users size={18} className="text-[var(--foreground-muted)]" strokeWidth={1.5} />
           <span className="text-sm">Parrainage</span>
+        </Link>
+        <Link href="/moi/wallet" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <Wallet size={18} className="text-[var(--kaia-gold)]" strokeWidth={1.5} />
+          <span className="text-sm">Mon wallet</span>
+        </Link>
+        <Link href="/moi/terra-nova" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <Globe2 size={18} className="text-[var(--kaia-moon)]" strokeWidth={1.5} />
+          <span className="text-sm">TERRA NOVA</span>
+        </Link>
+        <Link href="/moi/accompagnants" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <HeartHandshake size={18} className="text-[var(--kaia-rose)]" strokeWidth={1.5} />
+          <span className="text-sm">Espace Accompagnants</span>
+        </Link>
+        <Link href="/moi/fiscal" className="flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-all">
+          <FileText size={18} className="text-[var(--foreground-muted)]" strokeWidth={1.5} />
+          <span className="text-sm">Mon fiscal</span>
         </Link>
       </div>
 

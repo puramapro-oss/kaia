@@ -28,6 +28,30 @@
     {
       "path": "/api/cron/weekly-newsletter",
       "schedule": "0 9 * * 0"
+    },
+    {
+      "path": "/api/core/world-radar",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/karma-redistribution",
+      "schedule": "0 2 1 * *"
+    },
+    {
+      "path": "/api/cron/primes-check",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/notifications",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/reactivation",
+      "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/onboarding-drip",
+      "schedule": "0 10 * * *"
     }
   ]
 }
