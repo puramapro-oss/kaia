@@ -20,11 +20,12 @@ export interface VitaePlan {
   description: string;
 }
 
+// VITAE §20 — 9,99/49,99/99,99€ FIXED (overrides BRIEF §8.2)
 export const VITAE_PLANS: VitaePlan[] = [
   {
     key: "essentiel",
-    priceCents: 1499,
-    priceLabel: "14,99 €",
+    priceCents: 999,
+    priceLabel: "9,99 €",
     multiplier: 1,
     envPriceId: process.env.STRIPE_PRICE_ESSENTIEL ?? "",
     envPriceIdAnnual: process.env.STRIPE_PRICE_ESSENTIEL_ANNUAL ?? "",
@@ -33,8 +34,8 @@ export const VITAE_PLANS: VitaePlan[] = [
   },
   {
     key: "infini",
-    priceCents: 2999,
-    priceLabel: "29,99 €",
+    priceCents: 4999,
+    priceLabel: "49,99 €",
     multiplier: 5,
     envPriceId: process.env.STRIPE_PRICE_INFINI ?? "",
     envPriceIdAnnual: process.env.STRIPE_PRICE_INFINI_ANNUAL ?? "",
