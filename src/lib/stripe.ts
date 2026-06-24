@@ -23,8 +23,8 @@ export interface VitaePlan {
 export const VITAE_PLANS: VitaePlan[] = [
   {
     key: "essentiel",
-    priceCents: 999,
-    priceLabel: "9,99 €",
+    priceCents: 1499,
+    priceLabel: "14,99 €",
     multiplier: 1,
     envPriceId: process.env.STRIPE_PRICE_ESSENTIEL ?? "",
     envPriceIdAnnual: process.env.STRIPE_PRICE_ESSENTIEL_ANNUAL ?? "",
@@ -33,8 +33,8 @@ export const VITAE_PLANS: VitaePlan[] = [
   },
   {
     key: "infini",
-    priceCents: 4999,
-    priceLabel: "49,99 €",
+    priceCents: 2999,
+    priceLabel: "29,99 €",
     multiplier: 5,
     envPriceId: process.env.STRIPE_PRICE_INFINI ?? "",
     envPriceIdAnnual: process.env.STRIPE_PRICE_INFINI_ANNUAL ?? "",

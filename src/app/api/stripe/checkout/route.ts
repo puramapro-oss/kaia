@@ -13,6 +13,7 @@ const Body = z.object({
     VITAE_PLAN_KEYS.INFINI,
     VITAE_PLAN_KEYS.LEGENDE,
   ]),
+  billing: z.enum(["monthly", "annual"]).default("monthly"),
   influencerLinkId: z.string().uuid().optional(),
   referralCode: z.string().optional(),
 });
@@ -48,7 +49,9 @@ export async function POST(request: NextRequest) {
   if (!plan) {
     return NextResponse.json({ error: `Plan inconnu: ${parsed.data.plan}` }, { status: 400 });
   }
-  if (!plan.envPriceId) {
+  const billing = parsed.data.billing;
+  const priceId = billing === "annual" ? plan.envPriceIdAnnual : plan.envPriceId;
+  if (!priceId) {
     return NextResponse.json(
       {
         error:
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
   const checkoutParams: import("stripe").Stripe.Checkout.SessionCreateParams = {
     mode: "subscription",
     customer: customerId,
-    line_items: [{ price: plan.envPriceId, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     payment_method_types: ["card", "link"],
     subscription_data: {
       trial_period_days: plan.trialDays ?? TRIAL_DAYS,
@@ -99,17 +102,19 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         app_slug: "kaia",
         plan_key: plan.key,
+        billing,
         influencer_link_id: influencerLinkId,
         referral_code: referralCode,
       },
     },
-    success_url: `${origin}/accueil?checkout=success&plan=${plan.key}`,
+    success_url: `${origin}/accueil?checkout=success&plan=${plan.key}&billing=${billing}`,
     cancel_url: `${origin}/pricing?checkout=cancel`,
     client_reference_id: user.id,
     metadata: {
       user_id: user.id,
       app_slug: "kaia",
       plan_key: plan.key,
+      billing,
       influencer_link_id: influencerLinkId,
       referral_code: referralCode,
     },
