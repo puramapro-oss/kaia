@@ -4,13 +4,16 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SubscribeStarter } from "@/components/subscribe/SubscribeStarter";
 import { GlassCard } from "@/components/ui/Card";
+import type { VitaePlanKey } from "@/lib/constants";
 
 export const metadata = { title: "Activer mon abonnement" };
+
+const VALID_PLAN_KEYS: VitaePlanKey[] = ["essentiel", "infini", "legende"];
 
 export default async function SubscribePage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; user?: string; return?: string; app?: string }>;
+  searchParams: Promise<{ plan?: string; billing?: string; user?: string; return?: string; app?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -22,7 +25,10 @@ export default async function SubscribePage({
     redirect(`/login?next=${encodeURIComponent(`/subscribe?${new URLSearchParams(params as Record<string, string>).toString()}`)}`);
   }
 
-  const plan = params.plan === "yearly" ? "yearly" : "monthly";
+  const planKey: VitaePlanKey = VALID_PLAN_KEYS.includes(params.plan as VitaePlanKey)
+    ? (params.plan as VitaePlanKey)
+    : "essentiel";
+  const billing: "monthly" | "annual" = params.billing === "annual" ? "annual" : "monthly";
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-5 py-12">
@@ -47,7 +53,7 @@ export default async function SubscribePage({
             </p>
           </header>
           <Suspense fallback={<div className="h-12 rounded-2xl bg-white/5 animate-pulse" />}>
-            <SubscribeStarter plan={plan} returnUrl={params.return} />
+            <SubscribeStarter planKey={planKey} billing={billing} returnUrl={params.return} />
           </Suspense>
         </GlassCard>
       </div>
