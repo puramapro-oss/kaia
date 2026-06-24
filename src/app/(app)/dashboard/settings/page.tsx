@@ -5,6 +5,7 @@ import {
   Eye,
   Bell,
   CreditCard,
+  Database,
   ChevronRight,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/Card";
@@ -30,11 +31,11 @@ const SECTIONS: SettingsLink[] = [
     accent: "var(--color-kaia-accent)",
   },
   {
-    href: "/dashboard/settings/abonnement",
+    href: "/dashboard/settings/billing",
     label: "Abonnement",
     description: "Plan, facturation, gestion via le portail Stripe.",
     icon: CreditCard,
-    available: false,
+    available: true,
     accent: "var(--color-kaia-gold)",
   },
   {
@@ -42,8 +43,16 @@ const SECTIONS: SettingsLink[] = [
     label: "Notifications",
     description: "Rappels routine, rituels hebdo, news bienveillantes.",
     icon: Bell,
-    available: false,
+    available: true,
     accent: "var(--color-kaia-terracotta)",
+  },
+  {
+    href: "/dashboard/settings/data",
+    label: "Mes données",
+    description: "Export RGPD, suppression de compte, droits d'accès.",
+    icon: Database,
+    available: true,
+    accent: "#7d8aa8",
   },
   {
     href: "/dashboard/settings/accessibility",

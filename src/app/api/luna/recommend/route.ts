@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { detectPhase, getCycleDay } from "@/lib/cycle/phases";
 import { getLunarPhase } from "@/lib/cycle/lunar";
 import { passLocalFilter } from "@/lib/luna/safety";
+import { rateLimit } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 
 export async function GET() {
@@ -15,6 +16,11 @@ export async function GET() {
 
     if (!user) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const rl = await rateLimit(`luna-recommend:${user.id}`, 20, 300);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: "Trop de requêtes. Réessaie dans quelques minutes." }, { status: 429 });
     }
 
     // Get profile
