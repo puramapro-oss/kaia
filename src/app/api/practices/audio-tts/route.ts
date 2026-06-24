@@ -3,17 +3,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { SUPPORTED_LOCALES } from "@/lib/constants";
+import { getVoice } from "@/lib/audio/voices";
 
 export const runtime = "nodejs";
 
-/**
- * Endpoint TTS — désactivé en P3.
- * Quand `ELEVENLABS_API_KEY` sera présent (P9), on switche le flag à `true`
- * et on implémente la génération + cache R2/Vercel Blob.
- *
- * En attendant, le client utilise `window.speechSynthesis` (navigateur natif,
- * gratuit, sans réseau) — voir `components/routine/SessionPlayer.tsx`.
- */
 const ELEVENLABS_ENABLED =
   process.env.ENABLE_ELEVENLABS === "true" && Boolean(process.env.ELEVENLABS_API_KEY);
 
@@ -27,10 +20,9 @@ export async function POST(request: NextRequest) {
   if (!ELEVENLABS_ENABLED) {
     return NextResponse.json(
       {
-        error: "TTS serveur désactivé en P3.",
+        error: "TTS serveur désactivé.",
         fallback: "client_speech_synthesis",
-        message:
-          "Utilise window.speechSynthesis côté client. Activation ElevenLabs prévue en P9 (flag ENABLE_ELEVENLABS).",
+        message: "Utilise window.speechSynthesis côté client.",
       },
       { status: 503 },
     );
@@ -64,9 +56,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Trop de requêtes TTS." }, { status: 429 });
   }
 
-  // P9 : implémentation ElevenLabs ici (cache hash → Vercel Blob → URL signée).
-  return NextResponse.json(
-    { error: "Implémentation ElevenLabs prévue en P9." },
-    { status: 501 },
+  const { text, locale = "fr", voiceId } = parsed.data;
+  const voice = getVoice(locale);
+  const selectedVoiceId = voiceId ?? voice.voiceId;
+
+  const resp = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": process.env.ELEVENLABS_API_KEY!,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: voice.stability,
+          similarity_boost: voice.similarity,
+          style: voice.style,
+          use_speaker_boost: voice.speakerBoost,
+        },
+      }),
+    },
   );
+
+  if (!resp.ok) {
+    const errorText = await resp.text().catch(() => "");
+    console.error("[audio-tts] ElevenLabs error:", resp.status, errorText);
+    return NextResponse.json({ error: "Génération audio échouée." }, { status: 502 });
+  }
+
+  return new NextResponse(resp.body, {
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }
