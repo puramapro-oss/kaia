@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import type { VitaePlanKey } from "@/lib/constants";
 
 export function SubscribeStarter({
-  plan,
+  planKey,
+  billing,
   returnUrl,
 }: {
-  plan: "monthly" | "yearly";
+  planKey: VitaePlanKey;
+  billing: "monthly" | "annual";
   returnUrl?: string;
 }) {
   const [loading, setLoading] = useState(false);
@@ -19,7 +22,7 @@ export function SubscribeStarter({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan: planKey, billing }),
       });
       const data = await res.json();
       if (!res.ok || !data?.url) {
@@ -40,7 +43,7 @@ export function SubscribeStarter({
   return (
     <div className="space-y-3">
       <Button onClick={start} loading={loading} className="w-full">
-        {plan === "yearly" ? "Continuer (annuel −30 %)" : "Continuer"}
+        {billing === "annual" ? "Continuer (annuel −30 %)" : "Continuer"}
       </Button>
       <p className="text-[11px] text-white/40 text-center">
         En continuant, tu acceptes nos conditions et démarres l'essai 14 jours.
