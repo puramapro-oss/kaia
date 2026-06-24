@@ -52,6 +52,14 @@
     {
       "path": "/api/cron/onboarding-drip",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/daily-routine-prep",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/token-cleanup",
+      "schedule": "30 3 * * *"
     }
   ]
 }

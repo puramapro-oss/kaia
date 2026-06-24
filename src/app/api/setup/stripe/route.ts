@@ -18,7 +18,8 @@ export async function POST() {
     const results: Array<{
       key: string;
       productId: string;
-      priceId: string;
+      priceMonthlyId: string;
+      priceAnnualId: string;
       priceLabel: string;
     }> = [];
 
@@ -29,34 +30,74 @@ export async function POST() {
         metadata: { app: "kaia", plan_key: plan.key, multiplier: String(plan.multiplier) },
       });
 
-      const price = await stripe.prices.create({
+      const priceMonthly = await stripe.prices.create({
         product: product.id,
         unit_amount: plan.priceCents,
         currency: "eur",
         recurring: { interval: "month" },
-        metadata: { app: "kaia", plan_key: plan.key },
+        metadata: { app: "kaia", plan_key: plan.key, billing: "monthly" },
+      });
+
+      // Annual = monthly × 12 × 0.7 (−30%)
+      const priceAnnual = await stripe.prices.create({
+        product: product.id,
+        unit_amount: Math.round(plan.priceCents * 12 * 0.7),
+        currency: "eur",
+        recurring: { interval: "year" },
+        metadata: { app: "kaia", plan_key: plan.key, billing: "annual" },
       });
 
       results.push({
         key: plan.key,
         productId: product.id,
-        priceId: price.id,
+        priceMonthlyId: priceMonthly.id,
+        priceAnnualId: priceAnnual.id,
         priceLabel: plan.priceLabel,
       });
     }
 
+    // Create coupons
+    const coupons = await Promise.allSettled([
+      stripe.coupons.create({
+        id: "INFLUENCER_50OFF",
+        percent_off: 50,
+        duration: "once",
+        name: "Influenceur −50% premier mois",
+        metadata: { app: "kaia" },
+      }),
+      stripe.coupons.create({
+        id: "LAUNCH10",
+        percent_off: 10,
+        duration: "once",
+        name: "Lancement −10%",
+        metadata: { app: "kaia" },
+      }),
+      stripe.coupons.create({
+        id: "ANNUAL30",
+        percent_off: 30,
+        duration: "once",
+        name: "Annuel −30%",
+        metadata: { app: "kaia" },
+      }),
+    ]);
+
     const envLines = results
-      .map((r) => {
-        const envKey = `STRIPE_PRICE_${r.key.toUpperCase()}=${r.priceId}`;
-        return envKey;
-      })
+      .flatMap((r) => [
+        `STRIPE_PRICE_${r.key.toUpperCase()}=${r.priceMonthlyId}`,
+        `STRIPE_PRICE_${r.key.toUpperCase()}_ANNUAL=${r.priceAnnualId}`,
+      ])
       .join("\n");
 
     return NextResponse.json({
       success: true,
-      message: "VITAE products created. Add these to .env.local and Vercel:",
+      message: "VITAE products + annual prices + coupons created. Add these to .env.local and Vercel:",
       envVars: envLines,
       results,
+      coupons: coupons.map((c, i) =>
+        c.status === "fulfilled"
+          ? { id: ["INFLUENCER_50OFF", "LAUNCH10", "ANNUAL30"][i], status: "created" }
+          : { id: ["INFLUENCER_50OFF", "LAUNCH10", "ANNUAL30"][i], status: "already_exists" }
+      ),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

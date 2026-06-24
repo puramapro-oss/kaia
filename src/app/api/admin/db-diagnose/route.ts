@@ -17,8 +17,8 @@ function trim(value: string | undefined): string | undefined {
 }
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const token = url.searchParams.get("token");
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   const expected = trim(process.env.ADMIN_DB_TOKEN);
   if (!expected || token !== expected) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -42,8 +42,9 @@ export async function GET(request: NextRequest) {
     { user: "supabase_admin", port: 5432, label: "admin-5432" },
   ];
 
-  const probeUserParam = url.searchParams.get("user");
-  const probePortParam = url.searchParams.get("port");
+  const { searchParams } = new URL(request.url);
+  const probeUserParam = searchParams.get("user");
+  const probePortParam = searchParams.get("port");
   const queue = probeUserParam
     ? [{ user: probeUserParam, port: Number(probePortParam ?? 5432), label: "explicit" }]
     : candidates;
