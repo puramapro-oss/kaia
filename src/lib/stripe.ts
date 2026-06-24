@@ -15,6 +15,7 @@ export interface VitaePlan {
   priceLabel: string;
   multiplier: number;
   envPriceId: string;
+  envPriceIdAnnual: string;
   trialDays: number;
   description: string;
 }
@@ -26,6 +27,7 @@ export const VITAE_PLANS: VitaePlan[] = [
     priceLabel: "9,99 €",
     multiplier: 1,
     envPriceId: process.env.STRIPE_PRICE_ESSENTIEL ?? "",
+    envPriceIdAnnual: process.env.STRIPE_PRICE_ESSENTIEL_ANNUAL ?? "",
     trialDays: 14,
     description: "Accès essentiel — 1× multiplicateur KARMA",
   },
@@ -35,6 +37,7 @@ export const VITAE_PLANS: VitaePlan[] = [
     priceLabel: "49,99 €",
     multiplier: 5,
     envPriceId: process.env.STRIPE_PRICE_INFINI ?? "",
+    envPriceIdAnnual: process.env.STRIPE_PRICE_INFINI_ANNUAL ?? "",
     trialDays: 14,
     description: "Accès infini — 5× multiplicateur KARMA",
   },
@@ -44,6 +47,7 @@ export const VITAE_PLANS: VitaePlan[] = [
     priceLabel: "99,99 €",
     multiplier: 10,
     envPriceId: process.env.STRIPE_PRICE_LEGENDE ?? "",
+    envPriceIdAnnual: process.env.STRIPE_PRICE_LEGENDE_ANNUAL ?? "",
     trialDays: 14,
     description: "Accès légende — 10× multiplicateur KARMA",
   },
@@ -56,21 +60,24 @@ export function getVitaePlan(key: VitaePlanKey): VitaePlan | undefined {
 export async function createCheckoutSession(
   userId: string,
   planKey: VitaePlanKey,
-  returnUrl: string
+  returnUrl: string,
+  billing: "monthly" | "annual" = "monthly"
 ): Promise<string> {
   const plan = getVitaePlan(planKey);
   if (!plan) throw new Error(`Plan inconnu: ${planKey}`);
-  if (!plan.envPriceId) throw new Error(`Price ID manquant pour: ${planKey}`);
+
+  const priceId = billing === "annual" ? plan.envPriceIdAnnual : plan.envPriceId;
+  if (!priceId) throw new Error(`Price ID manquant pour: ${planKey} (${billing})`);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    line_items: [{ price: plan.envPriceId, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
       trial_period_days: plan.trialDays,
-      metadata: { user_id: userId, plan_key: planKey, app: "kaia" },
+      metadata: { user_id: userId, plan_key: planKey, billing, app: "kaia" },
     },
-    metadata: { user_id: userId, plan_key: planKey, app: "kaia" },
-    success_url: `${returnUrl}?checkout=success&plan=${planKey}`,
+    metadata: { user_id: userId, plan_key: planKey, billing, app: "kaia" },
+    success_url: `${returnUrl}?checkout=success&plan=${planKey}&billing=${billing}`,
     cancel_url: `${returnUrl}?checkout=canceled`,
     allow_promotion_codes: true,
   });
