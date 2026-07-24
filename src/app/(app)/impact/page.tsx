@@ -101,7 +101,7 @@ async function CollectiveSection() {
   ]);
 
   const userIds = (leaderRows ?? []).map((r) => r.user_id);
-  let nameMap = new Map<string, string>();
+  const nameMap = new Map<string, string>();
   if (userIds.length > 0) {
     const { data: profiles } = await admin
       .from("profiles")
