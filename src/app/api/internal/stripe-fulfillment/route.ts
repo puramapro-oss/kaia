@@ -167,14 +167,18 @@ async function handleSubscriptionDeleted(
 }
 
 export async function POST(request: NextRequest) {
-  const signature = request.headers.get("stripe-signature");
+  const internalSecret = request.headers.get("x-internal-secret");
+  if (internalSecret !== process.env.INTERNAL_WEBHOOK_SECRET) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const rawBody = await request.text();
+  const signature = request.headers.get("x-stripe-signature");
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!signature || !secret) {
     return NextResponse.json({ error: "Webhook signature manquante." }, { status: 400 });
   }
-
-  const rawBody = await request.text();
 
   let event: Stripe.Event;
   try {
