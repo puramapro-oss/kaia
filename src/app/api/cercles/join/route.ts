@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/rate-limit";
 
 const Body = z.object({
   circleId: z.string().uuid(),
@@ -16,6 +17,11 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const { allowed } = await rateLimit(`cercles_join:${user.id}`, 10, 3600);
+    if (!allowed) {
+      return NextResponse.json({ error: "Trop de requêtes. Réessaie dans un instant." }, { status: 429 });
     }
 
     const json = await request.json();

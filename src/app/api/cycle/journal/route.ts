@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { encryptCycleNote } from "@/lib/crypto/cycle-encrypt";
+import { rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   mood: z.number().min(1).max(5),
@@ -22,6 +23,11 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const { allowed } = await rateLimit(`cycle_journal:${user.id}`, 100, 86400);
+    if (!allowed) {
+      return NextResponse.json({ error: "Limite journalière atteinte (100 entrées/jour)." }, { status: 429 });
     }
 
     const body = await req.json();

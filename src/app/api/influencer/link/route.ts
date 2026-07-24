@@ -5,11 +5,16 @@
  * BRIEF §9.2 : code unique + promo activée 7 jours.
  */
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { previewCodeFor } from "@/lib/influencer/codes";
 
 export const runtime = "nodejs";
+
+const Body = z.object({
+  campaign: z.string().max(60).optional(),
+});
 
 const PROMO_DAYS = 7;
 
@@ -44,13 +49,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  void request;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Auth requise." }, { status: 401 });
+  }
+
+  const parsed = Body.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
 
   // 1. Application doit être approved

@@ -1,9 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+const Body = z.object({
+  // No body params required yet, but enforce empty object or future-proof
+  requestKyc: z.boolean().optional(),
+});
 
 /**
  * Conversion / retrait de Graines. KYC OBLIGATOIRE (Stripe Identity).
@@ -24,6 +30,11 @@ export async function POST(request: NextRequest) {
     const { allowed } = await rateLimit(`graines_exchange:${user.id}`, 10, 3600);
     if (!allowed) {
       return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
+    }
+
+    const parsed = Body.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Données invalides" }, { status: 400 });
     }
 
     const service = createServiceClient();
