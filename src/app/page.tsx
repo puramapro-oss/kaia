@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     siteName: "KAÏA",
     locale: "fr_FR",
     type: "website",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "KAÏA" }],
   },
 };
 
