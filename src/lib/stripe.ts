@@ -75,9 +75,9 @@ export async function createCheckoutSession(
     line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
       trial_period_days: plan.trialDays,
-      metadata: { user_id: userId, plan_key: planKey, billing, app: "kaia" },
+      metadata: { user_id: userId, plan_key: planKey, billing, app_slug: "kaia" },
     },
-    metadata: { user_id: userId, plan_key: planKey, billing, app: "kaia" },
+    metadata: { user_id: userId, plan_key: planKey, billing, app_slug: "kaia" },
     success_url: `${returnUrl}?checkout=success&plan=${planKey}&billing=${billing}`,
     cancel_url: `${returnUrl}?checkout=canceled`,
     allow_promotion_codes: true,
