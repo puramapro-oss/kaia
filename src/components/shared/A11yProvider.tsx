@@ -47,12 +47,12 @@ export function A11yProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<A11yPrefs>;
-        setPrefs((current) => ({ ...current, ...parsed }));
+        queueMicrotask(() => setPrefs((current) => ({ ...current, ...parsed })));
       }
     } catch {
       // localStorage indisponible (Safari private, quota dépassé) : on garde defaults
     }
-    setHydrated(true);
+    queueMicrotask(() => setHydrated(true));
   }, []);
 
   useEffect(() => {

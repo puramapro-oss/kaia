@@ -10,7 +10,6 @@ interface BreathingGuideProps {
 
 export default function BreathingGuide({ phase, onComplete }: BreathingGuideProps) {
   const [timeLeft, setTimeLeft] = useState(phase.durationSec);
-  const [breathCycle, setBreathCycle] = useState<"inhale" | "hold" | "exhale" | "pause">("inhale");
   const [cycleProgress, setCycleProgress] = useState(0);
 
   // Countdown timer
@@ -47,23 +46,16 @@ export default function BreathingGuide({ phase, onComplete }: BreathingGuideProp
     return () => clearInterval(interval);
   }, [phase.breathRhythm]);
 
-  // Update breath phase based on cycle progress
-  useEffect(() => {
-    if (!phase.breathRhythm) return;
-
-    const { inhale, hold, exhale, pause } = phase.breathRhythm;
+  // Derive breath cycle from progress (no effect needed)
+  const breathCycle = (() => {
+    if (!phase.breathRhythm) return "inhale";
+    const { inhale, hold, exhale } = phase.breathRhythm;
     const p = cycleProgress;
-
-    if (p < inhale) {
-      setBreathCycle("inhale");
-    } else if (p < inhale + hold) {
-      setBreathCycle("hold");
-    } else if (p < inhale + hold + exhale) {
-      setBreathCycle("exhale");
-    } else {
-      setBreathCycle("pause");
-    }
-  }, [cycleProgress, phase.breathRhythm]);
+    if (p < inhale) return "inhale";
+    if (p < inhale + hold) return "hold";
+    if (p < inhale + hold + exhale) return "exhale";
+    return "pause";
+  })() as "inhale" | "hold" | "exhale" | "pause";
 
   // Circle scale based on breath
   const getCircleScale = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { ShieldCheck } from "lucide-react";
 import {
   buildConsentPayload,
@@ -26,11 +26,9 @@ export default function ARConsentQR({
   protocolSlug: string;
   onConsent: (token: string) => void;
 }) {
-  const [token, setToken] = useState("");
-
-  useEffect(() => {
+  const token = useMemo(() => {
     const payload = buildConsentPayload({ userId, style, protocolSlug, issuedAt: Date.now() });
-    setToken(encodeConsent(payload));
+    return encodeConsent(payload);
   }, [userId, style, protocolSlug]);
 
   return (

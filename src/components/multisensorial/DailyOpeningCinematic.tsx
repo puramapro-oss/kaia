@@ -27,7 +27,7 @@ export function DailyOpeningCinematic({
   useEffect(() => {
     if (!prefs.cinematic) {
       onFinish();
-      setHidden(true);
+      queueMicrotask(() => setHidden(true));
       return;
     }
     const timeout = setTimeout(() => {

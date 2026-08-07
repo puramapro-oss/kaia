@@ -19,10 +19,9 @@ export default function MomentZ({
   event: MomentZEvent;
   onLive?: () => void;
 }) {
-  const [now, setNow] = useState<Date | null>(null);
+  const [now, setNow] = useState<Date | null>(() => new Date());
 
   useEffect(() => {
-    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);

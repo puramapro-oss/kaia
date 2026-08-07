@@ -8,7 +8,6 @@ interface SoulagementImmediatProps {
 
 export default function SoulagementImmediat({ onComplete }: SoulagementImmediatProps) {
   const [currentRound, setCurrentRound] = useState(1);
-  const [breathPhase, setBreathPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const [phaseProgress, setPhaseProgress] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -37,16 +36,12 @@ export default function SoulagementImmediat({ onComplete }: SoulagementImmediatP
     return () => clearInterval(interval);
   }, [currentRound, totalRounds, totalCycle, showFeedback]);
 
-  useEffect(() => {
+  const breathPhase = (() => {
     const p = phaseProgress;
-    if (p < rhythm.inhale) {
-      setBreathPhase("inhale");
-    } else if (p < rhythm.inhale + rhythm.hold) {
-      setBreathPhase("hold");
-    } else {
-      setBreathPhase("exhale");
-    }
-  }, [phaseProgress, rhythm]);
+    if (p < rhythm.inhale) return "inhale";
+    if (p < rhythm.inhale + rhythm.hold) return "hold";
+    return "exhale";
+  })() as "inhale" | "hold" | "exhale";
 
   const getCircleScale = () => {
     const p = phaseProgress;

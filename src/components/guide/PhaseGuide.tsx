@@ -19,7 +19,6 @@ export default function PhaseGuide({ currentPhase }: { currentPhase: CyclePhase 
     let active = true;
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 12000);
-    setLunaState("loading");
     fetch("/api/guide/daily", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("http"))))
       .then((data) => {

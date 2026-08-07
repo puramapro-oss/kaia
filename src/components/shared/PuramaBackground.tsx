@@ -49,13 +49,16 @@ interface PuramaBackgroundProps {
 }
 
 export default function PuramaBackground({ variant = 'default', opacity = 1 }: PuramaBackgroundProps) {
-  const [prefersReduced, setPrefersReduced] = useState(false);
+  const [prefersReduced, setPrefersReduced] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
+  );
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    queueMicrotask(() => setMounted(true));
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReduced(mq.matches);
     const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);

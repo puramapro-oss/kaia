@@ -27,20 +27,15 @@ export default function ARFlowClient({
 }) {
   const router = useRouter();
   const [consentToken, setConsentToken] = useState<string | null>(null);
-  const [capability, setCapability] = useState<ARCapability | null>(null);
+  const [capability] = useState<ARCapability | null>(() =>
+    detectARCapability({
+      hasXR: typeof navigator !== "undefined" && "xr" in navigator,
+      hasCamera:
+        typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia,
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    })
+  );
   const protocol = getARProtocol(protocolSlug);
-
-  // Détection capacité côté client (caméra / WebXR / mobile).
-  useEffect(() => {
-    setCapability(
-      detectARCapability({
-        hasXR: typeof navigator !== "undefined" && "xr" in navigator,
-        hasCamera:
-          typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia,
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-      })
-    );
-  }, []);
 
   if (!enabled) {
     return (

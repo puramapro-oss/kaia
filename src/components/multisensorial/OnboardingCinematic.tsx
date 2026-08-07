@@ -38,7 +38,7 @@ export function OnboardingCinematic({ onFinish }: OnboardingCinematicProps) {
   useEffect(() => {
     if (!prefs.cinematic) {
       onFinish();
-      setHidden(true);
+      queueMicrotask(() => setHidden(true));
     }
   }, [prefs.cinematic, onFinish]);
 

@@ -102,7 +102,7 @@ export function BreathingCircle({
   // Démarre le timer quand running passe à true.
   useEffect(() => {
     if (!running) return;
-    setSecondsLeft(currentPhase.durationSec);
+    queueMicrotask(() => setSecondsLeft(currentPhase.durationSec));
     onPhaseChange?.(currentPhase.id);
     haptic("selection", prefs.haptics);
 

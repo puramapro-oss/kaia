@@ -17,12 +17,12 @@ export default function DualSync({
   userId: string;
 }) {
   const [copied, setCopied] = useState(false);
-  // `origin` n'est connu que côté client → state initialisé en effet (SSR-safe).
-  const [inviteUrl, setInviteUrl] = useState("");
-
-  useEffect(() => {
-    setInviteUrl(`${window.location.origin}/core/${eventId}?dual=${userId}`);
-  }, [eventId, userId]);
+  // `origin` n'est connu que côté client → state initialisé (SSR-safe).
+  const [inviteUrl] = useState(() =>
+    typeof window !== "undefined"
+      ? `${window.location.origin}/core/${eventId}?dual=${userId}`
+      : ""
+  );
 
   async function handleCopy() {
     if (await copyToClipboard(inviteUrl)) {

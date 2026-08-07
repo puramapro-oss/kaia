@@ -57,7 +57,9 @@ export function BinauralPlayer({
 
   // Stop si le user désactive le toggle pendant l'écoute.
   useEffect(() => {
-    if (!prefs.binaural && running) stop();
+    if (!prefs.binaural && running) {
+      queueMicrotask(() => stop());
+    }
   }, [prefs.binaural, running]);
 
   const start = () => {

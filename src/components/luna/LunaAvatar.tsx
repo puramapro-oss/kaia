@@ -23,8 +23,8 @@ export default function LunaAvatar({ state }: LunaAvatarProps) {
       }, 800);
       return () => clearInterval(interval);
     } else {
-      // Speaking: continuous animation
-      setScale(1.03);
+      // Speaking: set fixed scale once via queueMicrotask
+      queueMicrotask(() => setScale(1.03));
     }
   }, [state]);
 

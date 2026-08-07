@@ -40,7 +40,7 @@ export function ImpactCounter({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (reduced || value === 0) {
-      setDisplay(value);
+      queueMicrotask(() => setDisplay(value));
       return;
     }
 

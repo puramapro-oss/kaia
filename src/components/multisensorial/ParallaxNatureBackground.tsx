@@ -43,18 +43,21 @@ export function ParallaxNatureBackground({
   const token = useMemo(() => getNatureToken(slug), [slug]);
   const [offset, setOffset] = useState<ParallaxOffset>(ZERO_OFFSET);
   const [videoOk, setVideoOk] = useState<boolean>(false);
-  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
+  const [reducedMotion, setReducedMotion] = useState<boolean>(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false
+  );
   const layerNearRef = useRef<HTMLDivElement | null>(null);
   const layerMidRef = useRef<HTMLDivElement | null>(null);
   const layerFarRef = useRef<HTMLDivElement | null>(null);
 
   const wantsVideo = !forceStatic && prefs.background_video;
 
-  // Détection reduced-motion (live + au mount).
+  // Détection reduced-motion (live update only).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
     const onChange = () => setReducedMotion(mq.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
@@ -63,7 +66,7 @@ export function ParallaxNatureBackground({
   // Probe vidéo HEAD une seule fois (cache navigateur ensuite).
   useEffect(() => {
     if (!wantsVideo) {
-      setVideoOk(false);
+      queueMicrotask(() => setVideoOk(false));
       return;
     }
     let cancelled = false;
