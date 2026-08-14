@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       },
       success_url: `${origin}/donations?status=success`,
       cancel_url: `${origin}/donations?status=cancel`,
-    });
+    }, { idempotencyKey: `kaia-donation-${donation.id}` });
 
     return NextResponse.json({ url: session.url, donationId: donation.id });
   } catch (err) {

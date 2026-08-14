@@ -81,7 +81,7 @@ export async function createCheckoutSession(
     success_url: `${returnUrl}?checkout=success&plan=${planKey}&billing=${billing}`,
     cancel_url: `${returnUrl}?checkout=canceled`,
     allow_promotion_codes: true,
-  });
+  }, { idempotencyKey: `kaia-checkout-${userId}-${planKey}-${billing}` });
 
   if (!session.url) throw new Error("Stripe session URL manquante");
   return session.url;

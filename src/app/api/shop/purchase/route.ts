@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       },
       success_url: `${origin}/shop?status=success`,
       cancel_url: `${origin}/shop/${product.slug}?status=cancel`,
-    });
+    }, { idempotencyKey: `kaia-purchase-${purchase.id}` });
 
     return NextResponse.json({ url: session.url, purchaseId: purchase.id });
   } catch (err) {

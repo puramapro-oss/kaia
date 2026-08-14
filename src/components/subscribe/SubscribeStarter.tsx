@@ -22,7 +22,7 @@ export function SubscribeStarter({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planKey, billing }),
+        body: JSON.stringify({ plan: planKey, billing, idempotencyKey: crypto.randomUUID() }),
       });
       const data = await res.json();
       if (!res.ok || !data?.url) {

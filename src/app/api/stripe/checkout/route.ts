@@ -16,6 +16,7 @@ const Body = z.object({
   billing: z.enum(["monthly", "annual"]).default("monthly"),
   influencerLinkId: z.string().uuid().optional(),
   referralCode: z.string().optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       email: user.email ?? undefined,
       name: profile?.full_name ?? undefined,
       metadata: { user_id: user.id, app_slug: "kaia" },
-    });
+    }, { idempotencyKey: `kaia-customer-${user.id}` });
     customerId = customer.id;
     await supabase
       .from("profiles")
@@ -122,7 +123,13 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const session = await stripe.checkout.sessions.create(checkoutParams);
+    // Clé générée côté client par tentative de clic (cf task_plan.md P3) : un
+    // retry réseau/double-clic du même clic renvoie la même session au lieu
+    // d'en créer une 2e. Fallback aléatoire si absente (client non à jour).
+    const session = await stripe.checkout.sessions.create(
+      checkoutParams,
+      { idempotencyKey: parsed.data.idempotencyKey ?? crypto.randomUUID() }
+    );
     return NextResponse.json({ url: session.url });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Stripe indisponible.";
