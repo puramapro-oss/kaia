@@ -44,7 +44,8 @@ jobs:
           npx cap sync android
 
       - name: Generate icons + splash
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#0a0a0f' --iconBackgroundColorDark '#0a0a0f' --splashBackgroundColor '#0a0a0f' --splashBackgroundColorDark '#0a0a0f'
+        run: |
+          npx @capacitor/assets generate --android --iconBackgroundColor '#0a0a0f' --iconBackgroundColorDark '#0a0a0f' --splashBackgroundColor '#0a0a0f' --splashBackgroundColorDark '#0a0a0f'
 
       - name: Inject release signing config
         run: |
@@ -94,6 +95,9 @@ jobs:
   build-ios:
     runs-on: macos-latest
     timeout-minutes: 30
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -110,7 +114,8 @@ jobs:
           npx cap sync ios
 
       - name: Generate icons + splash
-        run: npx @capacitor/assets generate --ios --iconBackgroundColor '#0a0a0f' --iconBackgroundColorDark '#0a0a0f' --splashBackgroundColor '#0a0a0f' --splashBackgroundColorDark '#0a0a0f'
+        run: |
+          npx @capacitor/assets generate --ios --iconBackgroundColor '#0a0a0f' --iconBackgroundColorDark '#0a0a0f' --splashBackgroundColor '#0a0a0f' --splashBackgroundColorDark '#0a0a0f'
 
       - name: Compile check (unsigned — prouve que le projet Xcode compile)
         working-directory: ios/App
@@ -124,13 +129,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
 
       - name: Import App Store Connect API key
-        if: ${{ secrets.ASC_KEY_ID != '' && secrets.APPLE_TEAM_ID != '' }}
+        if: ${{ env.ASC_KEY_ID != '' && env.APPLE_TEAM_ID != '' }}
         run: |
           mkdir -p ~/private_keys
           echo "${{ secrets.ASC_KEY_CONTENT }}" | base64 -d > ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
 
       - name: Archive + export signed IPA (App Store Connect API key)
-        if: ${{ secrets.ASC_KEY_ID != '' && secrets.APPLE_TEAM_ID != '' }}
+        if: ${{ env.ASC_KEY_ID != '' && env.APPLE_TEAM_ID != '' }}
         working-directory: ios/App
         run: |
           xcodebuild archive \
@@ -145,7 +150,7 @@ jobs:
             -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
 
-          cat > "$RUNNER_TEMP/ExportOptions.plist" << PLIST_EOF
+          cat > "$RUNNER_TEMP/ExportOptions.plist" << 'PLIST_EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -167,12 +172,12 @@ jobs:
             -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}
 
       - name: Skip signed archive (secrets manquants)
-        if: ${{ secrets.ASC_KEY_ID == '' || secrets.APPLE_TEAM_ID == '' }}
+        if: ${{ env.ASC_KEY_ID == '' || env.APPLE_TEAM_ID == '' }}
         run: |
           echo "::warning::Archive signée iOS sautée — APPLE_TEAM_ID manquant (secret repo) et/ou agreement App Store Connect non signé (voir MOBILE.md §Blocages)."
 
       - uses: actions/upload-artifact@v4
-        if: ${{ secrets.ASC_KEY_ID != '' && secrets.APPLE_TEAM_ID != '' }}
+        if: ${{ env.ASC_KEY_ID != '' && env.APPLE_TEAM_ID != '' }}
         with:
           name: kaia-ios-release-ipa
           path: ${{ runner.temp }}/export/*.ipa
