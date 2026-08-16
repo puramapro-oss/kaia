@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install deps
         run: npm ci --legacy-peer-deps
@@ -49,8 +49,7 @@ jobs:
 
       - name: Inject release signing config
         run: |
-          cat >> android/app/build.gradle << 'GRADLE_EOF'
-
+          cat > android/app/signing.gradle << 'GRADLE_EOF'
           android {
               signingConfigs {
                   release {
@@ -67,6 +66,8 @@ jobs:
               }
           }
           GRADLE_EOF
+          echo "" >> android/app/build.gradle
+          echo "apply from: 'signing.gradle'" >> android/app/build.gradle
 
       - name: Decode keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/purama-mobile-release.jks"
@@ -103,19 +104,23 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install deps
         run: npm ci --legacy-peer-deps
 
       - name: Scaffold iOS platform (Capacitor)
         run: |
-          npx cap add ios
+          npx cap add ios --packagemanager CocoaPods
           npx cap sync ios
 
       - name: Generate icons + splash
         run: |
           npx @capacitor/assets generate --ios --iconBackgroundColor '#0a0a0f' --iconBackgroundColorDark '#0a0a0f' --splashBackgroundColor '#0a0a0f' --splashBackgroundColorDark '#0a0a0f'
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios/App
+        run: pod install
 
       - name: Compile check (unsigned — prouve que le projet Xcode compile)
         working-directory: ios/App
