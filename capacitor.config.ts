@@ -16,7 +16,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "dev.purama.kaia",
   appName: "KAÏA",
-  webDir: ".next/standalone",
+  webDir: "public", // dummy — server.url prend le dessus (wrapping web live, pas de build statique)
   server: {
     url: "https://kaia.purama.dev",
     androidScheme: "https",
