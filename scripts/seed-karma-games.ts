@@ -247,7 +247,6 @@ async function run() {
     RETURNING slug
   `;
 
-  console.log(`✅ Seeded ${result.length} karma games into kaia.karma_games`);
 
   await sql.end();
 }

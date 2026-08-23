@@ -298,18 +298,14 @@ async function upsertMission(m: SeedMission): Promise<{ slug: string; status: st
 }
 
 async function main() {
-  console.log(`🎯 Seed missions KAÏA — ${MISSIONS.length} missions Phase 1`);
-  console.log(`   ⚠️  AUCUNE mission « note sur App Store » (Apple 5.3 + Google)`);
   for (const m of MISSIONS) {
     try {
       const r = await upsertMission(m);
-      console.log(`  ${r.status === "created" ? "✓" : "↻"} ${r.slug} (${r.status}) — ${m.reward_tokens} tokens`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`  ✗ ${m.slug} — ${msg}`);
     }
   }
-  console.log("✅ Done.");
 }
 
 main().catch((err) => {

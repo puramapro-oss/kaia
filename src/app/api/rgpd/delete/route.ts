@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // TODO(deploy): marquer deletion_requested_at + planifier purge CRON
-    // account-deletion (cascade FK), en conservant les cycles 30j.
     return NextResponse.json({ ok: true, action: "pending_implementation" });
   } catch (err) {
     console.error("[rgpd/delete] Exception:", err);

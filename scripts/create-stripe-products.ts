@@ -100,23 +100,16 @@ async function getOrCreateCoupon(spec: Stripe.CouponCreateParams): Promise<Strip
 }
 
 async function main() {
-  console.log("→ Creating KAÏA Stripe product…");
   const product = await getOrCreateProduct();
-  console.log(`  product: ${product.id}`);
 
   for (const spec of PRICES) {
     const price = await getOrCreatePrice(product.id, spec);
-    console.log(`  ${spec.lookup_key} → ${price.id}`);
   }
 
   for (const spec of COUPONS) {
     const coupon = await getOrCreateCoupon(spec);
-    console.log(`  coupon ${coupon.id} (${coupon.percent_off}% ${coupon.duration})`);
   }
 
-  console.log("✓ Stripe setup done. Add the price ids to .env.local + Vercel env vars:");
-  console.log("    STRIPE_PRICE_MONTHLY=price_...");
-  console.log("    STRIPE_PRICE_YEARLY=price_...");
 }
 
 main().catch((err) => {

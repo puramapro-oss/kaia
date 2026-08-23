@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
+    "@purama/smarana": "file:../packages/smarana",
     "@capacitor/android": "^7.6.2",
     "@capacitor/app": "^7.1.2",
     "@capacitor/cli": "^7.6.2",
@@ -67,7 +68,7 @@
     "next": "^16.2.11",
     "next-intl": "^4.9.1",
     "otplib": "^13.4.0",
-    "pg": "^8.20.0",
+    "pg": "^8.22.0",
     "posthog-js": "^1.372.1",
     "qrcode": "^1.5.4",
     "react": "19.2.4",

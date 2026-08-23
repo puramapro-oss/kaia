@@ -26,7 +26,6 @@ if (!existsSync(MIGRATION_PATH)) {
 }
 
 const sql = readFileSync(MIGRATION_PATH, "utf8");
-console.log(`📄 Migration chargée (${sql.length} chars)`);
 
 function readSecret(name: string): string | undefined {
   if (!existsSync(SECRETS_PATH)) return undefined;
@@ -37,8 +36,6 @@ function readSecret(name: string): string | undefined {
 
 const VPS_PASSWORD = readSecret("VPS_SSH_PASSWORD");
 const PG_PASSWORD = readSecret("POSTGRES_PASSWORD");
-
-console.log(`🔑 Secrets : VPS_SSH=${VPS_PASSWORD ? "ok" : "missing"} · POSTGRES=${PG_PASSWORD ? "ok" : "missing"}`);
 
 let applied = false;
 let lastError = "";
@@ -51,11 +48,9 @@ if (VPS_PASSWORD && PG_PASSWORD && !applied) {
       `sshpass -p '${VPS_PASSWORD}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=8 -o NumberOfPasswordPrompts=1 root@srv1286148.hstgr.cloud "docker exec -i supabase-db psql -U postgres -d postgres -v ON_ERROR_STOP=1" < "${MIGRATION_PATH}"`,
       { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
     );
-    console.log("OK");
     applied = true;
   } catch (e) {
     lastError = e instanceof Error ? e.message : String(e);
-    console.log(`fail (${lastError.slice(0, 80)})`);
   }
 }
 
@@ -69,17 +64,14 @@ if (PG_PASSWORD && !applied) {
         `PGPASSWORD='${PG_PASSWORD}' ${PSQL} -h 72.62.191.111 -p 5432 -U postgres -d postgres -v ON_ERROR_STOP=1 -f "${MIGRATION_PATH}"`,
         { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
       );
-      console.log("OK");
       applied = true;
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);
-      console.log(`fail (${lastError.slice(0, 80)})`);
     }
   }
 }
 
 if (applied) {
-  console.log("\n✅ Migration P5 appliquée.");
   process.exit(0);
 }
 

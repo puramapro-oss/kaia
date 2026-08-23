@@ -28,8 +28,6 @@ async function main() {
   const list = await stripe.webhookEndpoints.list({ limit: 100 });
   const existing = list.data.find((w) => w.url === URL);
   if (existing) {
-    console.log(`✓ Webhook already exists: ${existing.id}`);
-    console.log(`  secret: kept (Stripe does not re-disclose it after creation).`);
     return;
   }
   const endpoint = await stripe.webhookEndpoints.create({
@@ -38,9 +36,6 @@ async function main() {
     description: "KAÏA — production webhook (kaia.purama.dev)",
     metadata: { app_slug: "kaia" },
   });
-  console.log(`✓ Webhook created: ${endpoint.id}`);
-  console.log(`  Secret (add to STRIPE_WEBHOOK_SECRET):`);
-  console.log(`    ${endpoint.secret}`);
 }
 
 main().catch((err) => {

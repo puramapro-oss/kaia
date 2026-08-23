@@ -2,32 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { OnboardingCinematic } from "@/components/multisensorial/OnboardingCinematic";
 import { BreathingCircle } from "@/components/multisensorial/BreathingCircle";
-import { HapticButton } from "@/components/multisensorial/HapticButton";
-import { useOnboardingStore, STEP_ORDER, type AudioMode } from "./onboardingStore";
+import { useOnboardingStore, STEP_ORDER } from "./onboardingStore";
 import { completeOnboarding } from "@/app/onboarding/actions";
 import { ROUTINE_GOALS, GOAL_EMOJI, GOAL_LABELS_FR } from "@/lib/practices/categories";
-import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/constants";
+import { SUPPORTED_LOCALES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-
-const TIME_OPTIONS = [1, 3, 5, 10, 15, 30] as const;
-
-const LOCALE_LABEL: Record<SupportedLocale, { name: string; native: string }> = {
-  fr: { name: "Français", native: "Français" },
-  en: { name: "English", native: "English" },
-  es: { name: "Español", native: "Español" },
-  ar: { name: "Arabic", native: "العربية" },
-  zh: { name: "Chinese", native: "中文" },
-};
-
-const AUDIO_MODES: Array<{ id: AudioMode; label: string; sub: string }> = [
-  { id: "silence", label: "Silence", sub: "Aucun son d'ambiance." },
-  { id: "nature", label: "Sons nature", sub: "Forêt, océan, vent — selon la pratique." },
-  { id: "binaural", label: "Binauraux", sub: "Fréquences subtiles — bien-être profond." },
-  { id: "voice", label: "Voix guidée", sub: "Voix qui accompagne chaque étape." },
-];
+import { TIME_OPTIONS, LOCALE_LABEL, AUDIO_MODES } from "./onboardingConstants";
+import { StepShell, NextButton, ToggleRow } from "./OnboardingComponents";
+import { PaywallStep } from "./PaywallStep";
 
 export function OnboardingWizard() {
   const router = useRouter();
@@ -304,151 +289,10 @@ export function OnboardingWizard() {
           )}
 
           {step === "paywall" && (
-            <StepShell
-              eyebrow="14 jours offerts"
-              title="Tu as adoré ?"
-              subtitle="Continue avec 14 jours gratuits, puis 14,99 € / mois — annulable à tout moment."
-            >
-              <ul className="space-y-2 text-white/70 text-sm">
-                <li className="flex items-start gap-2">
-                  <Check className="w-4 h-4 mt-0.5 text-[var(--color-kaia-accent)] shrink-0" />
-                  <span>Catalogue complet de 80+ pratiques</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-4 h-4 mt-0.5 text-[var(--color-kaia-accent)] shrink-0" />
-                  <span>Routines IA personnalisées chaque jour</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-4 h-4 mt-0.5 text-[var(--color-kaia-accent)] shrink-0" />
-                  <span>Tokens, rituels collectifs, contests</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-4 h-4 mt-0.5 text-[var(--color-kaia-accent)] shrink-0" />
-                  <span>Aucune donnée santé stockée</span>
-                </li>
-              </ul>
-
-              <div className="flex flex-col gap-2 pt-2">
-                <HapticButton
-                  onClick={() => {
-                    handleFinish();
-                  }}
-                  variant="primary"
-                  size="lg"
-                  hapticIntensity="success"
-                  disabled={isPending}
-                  className="w-full"
-                >
-                  <Sparkles className="w-4 h-4" strokeWidth={1.7} />
-                  {isPending ? "Sauvegarde…" : "Démarrer mes 14 jours"}
-                </HapticButton>
-                <HapticButton
-                  onClick={() => {
-                    handleFinish();
-                  }}
-                  variant="ghost"
-                  size="md"
-                  hapticIntensity="selection"
-                  disabled={isPending}
-                  className="w-full"
-                >
-                  Continuer pour le moment
-                </HapticButton>
-              </div>
-
-              {submitError && (
-                <p className="text-sm text-[var(--color-kaia-terracotta)] mt-2" role="alert">
-                  {submitError}
-                </p>
-              )}
-            </StepShell>
+            <PaywallStep onFinish={handleFinish} isPending={isPending} error={submitError} />
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-interface StepShellProps {
-  eyebrow: string;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}
-
-function StepShell({ eyebrow, title, subtitle, children }: StepShellProps) {
-  return (
-    <div className="space-y-5">
-      <div className="text-xs uppercase tracking-[0.2em] text-white/45">{eyebrow}</div>
-      <h1 className="font-display text-3xl sm:text-4xl text-white/95 leading-tight">{title}</h1>
-      {subtitle && <p className="text-white/55">{subtitle}</p>}
-      <div className="space-y-4 pt-2">{children}</div>
-    </div>
-  );
-}
-
-function NextButton({
-  onClick,
-  label = "Continuer",
-  disabled,
-}: {
-  onClick: () => void;
-  label?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <HapticButton
-      onClick={onClick}
-      variant="primary"
-      size="md"
-      hapticIntensity="selection"
-      disabled={disabled}
-      className="w-full sm:w-auto mt-2"
-    >
-      {label}
-      <ArrowRight className="w-4 h-4 ml-1" strokeWidth={1.7} />
-    </HapticButton>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "w-full rounded-2xl border p-4 text-left wellness-anim flex items-center gap-3",
-        checked ? "border-white/25 bg-white/[0.05]" : "border-white/10",
-      )}
-      aria-pressed={checked}
-    >
-      <div className="flex-1">
-        <div className="font-display text-base text-white/95">{label}</div>
-        <div className="text-sm text-white/55">{description}</div>
-      </div>
-      <div
-        className={cn(
-          "h-6 w-11 rounded-full p-0.5 wellness-anim",
-          checked ? "bg-[var(--color-kaia-accent)]" : "bg-white/15",
-        )}
-      >
-        <div
-          className={cn(
-            "h-5 w-5 rounded-full bg-white wellness-anim",
-            checked ? "translate-x-5" : "translate-x-0",
-          )}
-        />
-      </div>
-    </button>
   );
 }

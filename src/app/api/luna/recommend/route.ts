@@ -4,7 +4,7 @@ import { detectPhase, getCycleDay } from "@/lib/cycle/phases";
 import { getLunarPhase } from "@/lib/cycle/lunar";
 import { passLocalFilter } from "@/lib/luna/safety";
 import { rateLimit } from "@/lib/rate-limit";
-import Anthropic from "@anthropic-ai/sdk";
+import { smarana } from '@purama/smarana';
 
 export async function GET() {
   try {
@@ -47,11 +47,7 @@ export async function GET() {
       ? `Phase du cycle: ${phase.label} (jour ${phase.dayInPhase}). Énergie: ${phase.energy}. Lune: ${lunarPhase?.label}.`
       : "Pas de données de cycle disponibles.";
 
-    // Call Claude for recommendation
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY!,
-    });
-
+    // JAMAIS modifier/résumer ce prompt système — app santé, disclaimers médicaux obligatoires.
     const systemPrompt = `Tu es LUNA, l'intelligence de KAÏA.
 Mode : Recommandation quotidienne personnalisée.
 Génère 1 recommandation principale pour la journée basée sur le contexte du cycle et de la lune.
@@ -59,19 +55,16 @@ Structure : [Intention du jour] + [1 pratique concrète (5-15 min)] + [1 conseil
 Ton : motivant mais doux, ancré dans le corps féminin. Jamais culpabilisant.
 JAMAIS de diagnostic médical ou de prescription.`;
 
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 800,
+    const result = await smarana.ask({
+      appSlug: 'kaia',
+      userId: user.id,
       system: systemPrompt,
-      messages: [
-        {
-          role: "user",
-          content: `Contexte : ${context}\n\nGénère une recommandation pour aujourd'hui.`,
-        },
-      ],
+      message: `Contexte : ${context}\n\nGénère une recommandation pour aujourd'hui.`,
+      tier: 'main',
+      maxTokens: 800,
     });
 
-    const recommendation = message.content[0].type === "text" ? message.content[0].text : "";
+    const recommendation = result.text;
 
     // Local filter
     if (!passLocalFilter(recommendation)) {

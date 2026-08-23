@@ -40,9 +40,6 @@ async function loadAxeSource(): Promise<string> {
 }
 
 async function main() {
-  console.log(`📋 KAÏA axe-core audit`);
-  console.log(`   Base   : ${BASE}`);
-  console.log(`   Paths  : ${PATHS.join(", ")}`);
 
   const axeSource = await loadAxeSource();
   const browser = await chromium.launch({ headless: true });
@@ -74,14 +71,10 @@ async function main() {
 
       const critical = result.filter((v) => v.impact === "critical" || v.impact === "serious");
       process.stdout.write(`(${result.length} total · ${critical.length} bloquantes)\n`);
-      for (const v of critical) {
-        console.log(`   ✗ [${v.impact}] ${v.id} — ${v.help} (${v.nodes.length} nœud(s))`);
-      }
       summary.push({ path, status, violations: result });
     } catch (err) {
       process.stdout.write(`(erreur)\n`);
       const reason = err instanceof Error ? err.message : String(err);
-      console.log(`   ✗ ${reason}`);
       summary.push({ path, status: 0, violations: [] });
     } finally {
       await page.close();
@@ -96,14 +89,10 @@ async function main() {
   );
   const totalAll = summary.reduce((acc, s) => acc + s.violations.length, 0);
 
-  console.log(`\n──────────────────────────────`);
-  console.log(`Résumé : ${summary.length} pages · ${totalAll} violations · ${totalCritical} critiques/sérieuses`);
 
   if (totalCritical > 0) {
-    console.log(`\n❌ Échec — ${totalCritical} violations bloquantes`);
     process.exit(1);
   }
-  console.log(`\n✅ Aucun blocage WCAG 2.2 AA.`);
 }
 
 main().catch((err) => {

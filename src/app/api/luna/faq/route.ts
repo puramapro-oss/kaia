@@ -3,18 +3,13 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getLunaModeConfig } from "@/lib/luna/modes";
 import { passLocalFilter, detectCrisis, getCrisisResponse } from "@/lib/luna/safety";
-import Anthropic from "@anthropic-ai/sdk";
+import { smarana } from '@purama/smarana';
 
 const schema = z.object({
   question: z.string().min(1).max(500),
 });
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const FAQ_CONFIG = getLunaModeConfig("faq");
-const FAQ_MODEL =
-  FAQ_CONFIG.model === "fast"
-    ? process.env.ANTHROPIC_MODEL_FAST ?? "claude-haiku-4-5-20251001"
-    : process.env.ANTHROPIC_MODEL_MAIN ?? "claude-sonnet-4-6";
 
 export async function POST(req: Request) {
   try {
@@ -52,19 +47,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ answer: getCrisisResponse() });
     }
 
-    const response = await anthropic.messages.create({
-      model: FAQ_MODEL,
-      max_tokens: FAQ_CONFIG.maxTokens,
+    const result = await smarana.ask({
+      appSlug: 'kaia',
+      userId: user.id,
       system: FAQ_CONFIG.systemPrompt,
-      messages: [{ role: "user", content: question }],
+      message: question,
+      tier: FAQ_CONFIG.model,
+      maxTokens: FAQ_CONFIG.maxTokens,
     });
 
-    const content = response.content[0];
-    if (content.type !== "text") {
-      throw new Error("unexpected_response");
-    }
-
-    const answer = content.text;
+    const answer = result.text;
 
     if (!passLocalFilter(answer)) {
       return NextResponse.json({

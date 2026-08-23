@@ -23,8 +23,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, action: "deferred" });
   }
 
-  // TODO(deploy): lire primes J30/J60 éligibles (retraction_deadline_at passé,
-  // pas d'annulation) → stripe.transfers.create → marquer paid_at.
   return NextResponse.json({ ok: true, action: "pending_implementation" });
 }
 

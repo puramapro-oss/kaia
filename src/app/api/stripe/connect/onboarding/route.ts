@@ -27,8 +27,6 @@ export async function POST() {
       });
     }
 
-    // TODO(deploy): createConnectAccount + createConnectAccountSession → clientSecret
-    // pour monter <ConnectAccountOnboarding> (dep @stripe/react-connect-js).
     return NextResponse.json({ ok: true, action: "pending_implementation" });
   } catch (err) {
     console.error("[stripe/connect/onboarding] Exception:", err);

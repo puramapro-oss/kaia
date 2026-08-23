@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { detectPhase, getCycleDay } from "@/lib/cycle/phases";
-import Anthropic from "@anthropic-ai/sdk";
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import { smarana } from '@purama/smarana';
 
 export async function GET() {
   try {
@@ -35,9 +33,11 @@ export async function GET() {
       cycleDuration
     );
 
-    const prompt = `Tu es LUNA, l'intelligence de KAÏA. Ne dis jamais que tu es une IA ou Claude.
+    // JAMAIS modifier/résumer ce prompt système — app santé.
+    const systemPrompt = `Tu es LUNA, l'intelligence de KAÏA. Ne dis jamais que tu es une IA ou Claude.
+Réponds UNIQUEMENT avec du JSON valide, sans markdown.`;
 
-Jour de cycle : J${cycleDay}/${cycleDuration}
+    const prompt = `Jour de cycle : J${cycleDay}/${cycleDuration}
 Phase actuelle : ${currentPhase.label} (J${currentPhase.dayInPhase} de la phase, ${currentPhase.daysUntilNext} jours avant la prochaine)
 Prochaine phase prévue : ${nextPhaseInfo.label} dans ${currentPhase.daysUntilNext} jours
 
@@ -52,24 +52,20 @@ Génère une prédiction de cycle en JSON strict :
   "conseil_du_jour": "Un conseil pratique court adapté à la phase (max 100 chars)",
   "energie_prevue": "haute|moyenne|basse",
   "symptomes_typiques": ["symptôme1", "symptôme2", "symptôme3"]
-}
+}`;
 
-Réponds UNIQUEMENT avec le JSON, sans markdown.`;
-
-    const response = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL_FAST ?? "claude-haiku-4-5-20251001",
-      max_tokens: 400,
-      messages: [{ role: "user", content: prompt }],
+    const result = await smarana.ask({
+      appSlug: 'kaia',
+      userId: user.id,
+      system: systemPrompt,
+      message: prompt,
+      tier: 'fast',
+      maxTokens: 400,
     });
-
-    const content = response.content[0];
-    if (content.type !== "text") {
-      throw new Error("unexpected_response");
-    }
 
     let prediction: unknown;
     try {
-      prediction = JSON.parse(content.text.trim());
+      prediction = JSON.parse(result.text.trim());
     } catch {
       throw new Error("json_parse_error");
     }

@@ -1436,8 +1436,6 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`📊 Practices currently in DB: ${head ? "?" : "?"} (head check OK)`);
-  console.log(`🌱 Upserting ${PRACTICES.length} practices…`);
 
   // Upsert by slug — chunks of 20 to avoid payload limits
   for (let i = 0; i < PRACTICES.length; i += 20) {
@@ -1461,7 +1459,6 @@ async function main() {
       console.error(`❌ Upsert chunk ${i}-${i + chunk.length}:`, error.message);
       process.exit(1);
     }
-    console.log(`  ✓ Chunk ${i + 1}-${i + chunk.length} OK`);
   }
 
   const { count, error: countErr } = await supabase
@@ -1471,7 +1468,6 @@ async function main() {
     console.error("Count error:", countErr.message);
     process.exit(1);
   }
-  console.log(`✅ Done. Total practices in DB: ${count}`);
 
   // Per-category breakdown
   const cats: Array<"meditation" | "breathing" | "mantra" | "mudra" | "movement" | "learning" | "reprogramming"> = [
@@ -1483,13 +1479,11 @@ async function main() {
     "learning",
     "reprogramming",
   ];
-  console.log("📊 Breakdown:");
   for (const c of cats) {
     const { count: cCount } = await supabase
       .from("practices")
       .select("id", { count: "exact", head: true })
       .eq("category", c);
-    console.log(`   ${c.padEnd(15)} → ${cCount}`);
   }
 }
 

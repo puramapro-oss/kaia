@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, action: "deferred" });
   }
 
-  // TODO(deploy): batch par utilisatrice → selectNotifications → insert queue → push.
   return NextResponse.json({ ok: true, action: "pending_implementation" });
 }
 

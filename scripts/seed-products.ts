@@ -124,17 +124,14 @@ async function upsertProduct(p: SeedProduct): Promise<{ slug: string; status: st
 }
 
 async function main() {
-  console.log("🛍️  Seed boutique KAÏA — 4 produits");
   for (const p of PRODUCTS) {
     try {
       const r = await upsertProduct(p);
-      console.log(`  ${r.status === "created" ? "✓" : "↻"} ${r.slug} (${r.status})`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`  ✗ ${p.slug} — ${msg}`);
     }
   }
-  console.log("✅ Done.");
 }
 
 main().catch((err) => {

@@ -50,8 +50,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // TODO(deploy): vérifier solde + blocage 30j prime + stripe.transfers.create
-    // vers le compte Connect de l'utilisatrice, puis enregistrer le retrait.
     return NextResponse.json({ ok: true, quote });
   } catch (err) {
     console.error("[karma/payout] Exception:", err);

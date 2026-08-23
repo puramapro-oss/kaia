@@ -53,8 +53,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Pas encore KYC : on signale le besoin de vérification.
-    // TODO(deploy): générer un VerificationSession Stripe Identity et renvoyer kycUrl.
     return NextResponse.json({
       ok: false,
       needsKyc: true,

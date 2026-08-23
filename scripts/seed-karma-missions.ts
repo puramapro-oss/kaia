@@ -130,7 +130,6 @@ async function run() {
     RETURNING slug
   `;
 
-  console.log(`✅ Seeded ${result.length} missions into kaia.missions`);
 
   await sql.end();
 }

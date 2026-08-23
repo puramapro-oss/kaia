@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, action: "deferred", period });
   }
 
-  // TODO(deploy): collecte revenu + computeDistribution + écriture shares + stamp + transferts.
   return NextResponse.json({ ok: true, action: "pending_implementation", period });
 }
 

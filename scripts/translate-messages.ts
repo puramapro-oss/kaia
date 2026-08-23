@@ -61,18 +61,11 @@ const toBuild = targets.filter((locale) => {
   return false;
 });
 
-console.log(`📋 KAÏA i18n — ${SUPPORTED_LOCALES.length} locales totales (1 source ${DEFAULT_LOCALE})`);
-console.log(`   Modèle    : ${model}`);
-console.log(`   Cibles    : ${targets.length} (${targets.length === SUPPORTED_LOCALES.length - 1 ? "toutes" : explicit.join(", ")})`);
-console.log(`   À générer : ${toBuild.length} ${toBuild.length === 0 ? "(rien à faire)" : `(${toBuild.join(", ")})`}`);
-
 if (isPlan) {
-  console.log("\n--plan : aucune écriture.");
   process.exit(0);
 }
 
 if (toBuild.length === 0) {
-  console.log("✓ Toutes les locales déjà générées. Utilise --force pour ré-écrire.");
   process.exit(0);
 }
 
@@ -170,7 +163,6 @@ async function withRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.includes("429") && !msg.includes("rate_limit")) throw err;
       const wait = 30000 * Math.pow(2, attempt); // 30s → 60s → 120s → 240s
-      console.log(`   ⏳ ${label} rate-limited, retry dans ${wait / 1000}s (essai ${attempt + 1}/${MAX_RETRIES})`);
       await sleep(wait);
       attempt++;
     }
@@ -180,7 +172,6 @@ async function withRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
 
 async function runSequential() {
   const errors: { locale: Locale; reason: string }[] = [];
-  console.log(`\n🐢 Mode séquentiel : 1 traduction toutes les ~${SEQUENTIAL_DELAY_MS / 1000}s pour respecter rate limit Anthropic.\n`);
 
   for (let i = 0; i < toBuild.length; i++) {
     const locale = toBuild[i];
@@ -208,12 +199,9 @@ async function runSequential() {
   }
 
   if (errors.length > 0) {
-    console.log(`\n⚠️  ${errors.length} échec(s). Re-run :`);
-    console.log(`   npx tsx scripts/translate-messages.ts ${errors.map((e) => e.locale).join(" ")}`);
     process.exit(1);
   }
 
-  console.log(`\n✅ ${toBuild.length} locales générées.`);
 }
 
 runSequential().catch((err) => {

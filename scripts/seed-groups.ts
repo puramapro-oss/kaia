@@ -100,13 +100,11 @@ async function main() {
       }
       inserted++;
     }
-    console.log(`✅ ${seed.slug}`);
   }
 
   const { count } = await supabase
     .from("practice_groups")
     .select("id", { count: "exact", head: true });
-  console.log(`\n📊 inséré=${inserted} · mis-à-jour=${updated} · total en DB=${count ?? 0}`);
 }
 
 main().catch((e) => {
