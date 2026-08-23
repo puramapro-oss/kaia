@@ -17,7 +17,7 @@ export default function WalletClient({
   grainesBalance: number;
   connectOnboarded: boolean;
 }) {
-  const [amountEur, setAmountEur] = useState("20");
+  const [amountEur, setAmountEur] = useState(String(MIN_WITHDRAWAL_CENTS / 100));
   const [busy, setBusy] = useState(false);
 
   const quote = useMemo(() => {
@@ -87,7 +87,9 @@ export default function WalletClient({
         </div>
 
         {!quote ? (
-          <p className="text-xs text-[var(--foreground-muted)]">Montant minimum : 20€.</p>
+          <p className="text-xs text-[var(--foreground-muted)]">
+            Montant minimum : {MIN_WITHDRAWAL_CENTS / 100}€.
+          </p>
         ) : (
           <div className="text-xs text-[var(--foreground-muted)] space-y-1">
             <div className="flex justify-between"><span>Frais ({quote.ratePct}%)</span><span>-{(quote.feeCents / 100).toFixed(2)}€</span></div>

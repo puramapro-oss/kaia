@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import AIDisclosure from "@/lib/legal/components/AIDisclosure";
 
 interface Message {
   role: "user" | "assistant";
@@ -60,6 +61,13 @@ export function AiHelpChat() {
 
   return (
     <div className="flex-1 flex flex-col rounded-2xl bg-white/[0.04] border border-white/[0.08] overflow-hidden">
+      <div className="bg-amber-300/10 border-b border-amber-300/20 px-4 py-2 text-center">
+        <AIDisclosure
+          appName="KAÏA"
+          extra="Ne remplace pas un avis médical ou professionnel."
+          className="text-xs text-white/70"
+        />
+      </div>
       {sosOpen && (
         <div
           role="alert"

@@ -15,6 +15,7 @@ export function buildPolitiqueConfidentialite(
 ): LegalSection[] {
   const { company: c } = config;
   const processorLines = activeProcessors(env).map((p) => `${p.role} : ${p.nom} (${p.paysHebergement}).`);
+  const estSanteBienEtre = config.famille === 'sante_bienetre';
 
   return [
     {
@@ -35,6 +36,19 @@ export function buildPolitiqueConfidentialite(
         'Données techniques : adresse IP, journal de connexion, à des fins de sécurité et de lutte contre la fraude.',
       ].filter(Boolean),
     },
+    ...(estSanteBienEtre
+      ? [
+          {
+            titre: 'Données de santé — consentement renforcé (art. 9 RGPD)',
+            paragraphes: [
+              "Certaines informations que vous renseignez dans l'application (dates et symptômes de cycle, notes de bien-être, réponses aux questionnaires de routine) constituent des données concernant la santé au sens de l'article 9 du RGPD, catégorie particulière de données bénéficiant d'une protection renforcée.",
+              "Le traitement de ces données repose exclusivement sur votre consentement explicite (art. 9.2.a RGPD), recueilli lors de la saisie de ces informations. Ce consentement est révocable à tout moment depuis la page « Ma mémoire » (export ou suppression immédiate des données concernées).",
+              "Ces données de santé ne sont jamais utilisées à des fins publicitaires, jamais cédées ni vendues à des tiers, et jamais partagées avec des annonceurs ou des courtiers de données. Elles ne servent qu'à personnaliser vos routines et votre suivi de cycle au sein de KAÏA.",
+              "Elles sont chiffrées (AES-256) au repos et déchiffrées uniquement à la demande, pour votre seul accès (cf « Ma mémoire », export RGPD).",
+            ],
+          } as LegalSection,
+        ]
+      : []),
     {
       titre: 'Finalités et bases légales',
       paragraphes: ['Chaque traitement repose sur une base légale précise :'],

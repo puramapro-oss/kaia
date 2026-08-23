@@ -10,12 +10,15 @@ export const TOKENS_TO_EUR = 0.01;
 export const EUR_TO_TOKENS = 100;
 export const DAILY_TOKEN_CAP = 200;
 
-export const WALLET_MIN_WITHDRAWAL_EUR = 20;
+// Verrouillé FACTS.md : WALLET_MIN = 5€ (seuil retrait minimum écosystème, ne pas diverger par app).
+export const WALLET_MIN_WITHDRAWAL_EUR = 5;
 export const WALLET_MAX_WITHDRAWAL_EUR = 1000;
 
 export const TRIAL_DAYS = 14;
 
-export const CPA_KAIA_EUR = 115;
+// Verrouillé FACTS.md : CPA universel 250-265€/user (KAÏA n'a pas de carte Purama physique
+// active → fourchette "universel", pas "carte complète" 365-665€). 260€ = milieu de fourchette.
+export const CPA_KAIA_EUR = 260;
 export const RETRACTION_DAYS = 30;
 export const KARMA_COMMISSION_PCT = 9;
 export const JACKPOT_TERRE_CAP_EUR = 25_000;

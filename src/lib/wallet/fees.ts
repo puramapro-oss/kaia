@@ -3,7 +3,7 @@
  * le taux baisse (incite à retirer moins souvent, couvre les frais Stripe).
  * Fonction pure.
  *
- * Min 20€ (8.7%) · recommandé 50€ (4.8%) · 200€+ (3.0%).
+ * Min 5€ (8.7%, palier le plus bas — même taux jusqu'à 20€) · recommandé 50€ (4.8%) · 200€+ (3.0%).
  * Bornes = source unique `WALLET_MIN/MAX_WITHDRAWAL_EUR` (lib/constants.ts).
  */
 import { WALLET_MIN_WITHDRAWAL_EUR, WALLET_MAX_WITHDRAWAL_EUR } from "@/lib/constants";
