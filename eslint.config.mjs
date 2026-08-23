@@ -1,10 +1,12 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import puramaConfig from "@purama/eslint-config";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  ...puramaConfig,
   {
     rules: {
       "react-hooks/purity": "off",
