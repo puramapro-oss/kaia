@@ -186,6 +186,17 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServiceClient();
 
+  // Idempotence : un event déjà traité est ignoré (PIEGES.md §1 — replay Stripe = double
+  // crédit primes/commissions sinon). Trouvaille distillation Fable 2026-08-23, cf MANAS/apps/kaia.md.
+  const { data: alreadyProcessed } = await supabase
+    .from("stripe_events_processed")
+    .select("event_id")
+    .eq("event_id", event.id)
+    .maybeSingle();
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true, deduped: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -301,6 +312,10 @@ export async function POST(request: NextRequest) {
         break;
       }
     }
+
+    // Marqué APRÈS succès du traitement (PIEGES.md §1 — jamais avant, sinon un crash
+    // partiel bloque le retraitement légitime).
+    await supabase.from("stripe_events_processed").insert({ event_id: event.id });
   } catch (err) {
     console.error("[stripe webhook]", event.type, err);
     return NextResponse.json({ error: "Erreur de traitement." }, { status: 500 });
