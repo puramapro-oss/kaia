@@ -6,6 +6,7 @@ import Script from "next/script";
 import { Toaster } from "sonner";
 import PuramaBackground from "@/components/shared/PuramaBackground";
 import { A11yProvider } from "@/components/shared/A11yProvider";
+import CookieConsentBannerClient from "@/components/legal/CookieConsentBannerClient";
 import { isLocale, isRtl, BCP47_MAP, type Locale } from "@/i18n/locales";
 import "./globals.css";
 
@@ -145,6 +146,7 @@ export default async function RootLayout({
             <main id="main" className="contents">
               {children}
             </main>
+            <CookieConsentBannerClient />
           </A11yProvider>
         </NextIntlClientProvider>
         <Toaster

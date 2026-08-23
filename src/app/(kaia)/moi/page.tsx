@@ -110,7 +110,7 @@ export default async function MoiPage() {
       </form>
 
       <p className="text-xs text-center text-[var(--foreground-muted)] pb-4">
-        KAÏA V2 · SASU PURAMA · <Link href="/legal/privacy" className="hover:underline underline-offset-2">Confidentialité</Link>
+        KAÏA V2 · SASU PURAMA · <Link href="/politique-confidentialite" className="hover:underline underline-offset-2">Confidentialité</Link>
       </p>
     </div>
   );

@@ -192,11 +192,11 @@ export default async function AbonnementPage() {
       <p className="text-xs text-center text-[var(--foreground-muted)] leading-relaxed pb-4">
         Abonnement mensuel sans engagement. Annulable à tout moment depuis le portail de
         gestion. {" "}
-        <Link href="/legal/cgv" className="hover:underline underline-offset-2">
+        <Link href="/cgv" className="hover:underline underline-offset-2">
           CGV
         </Link>{" "}
         ·{" "}
-        <Link href="/legal/privacy" className="hover:underline underline-offset-2">
+        <Link href="/politique-confidentialite" className="hover:underline underline-offset-2">
           Confidentialité
         </Link>
       </p>

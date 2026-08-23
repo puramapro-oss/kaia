@@ -45,8 +45,10 @@ export function MarketingFooter() {
             Mentions
           </h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/legal/cgu" className="text-white/65 hover:text-white wellness-anim">CGU</Link></li>
-            <li><Link href="/legal/privacy" className="text-white/65 hover:text-white wellness-anim">Confidentialité</Link></li>
+            <li><Link href="/mentions-legales" className="text-white/65 hover:text-white wellness-anim">Mentions légales</Link></li>
+            <li><Link href="/cgu" className="text-white/65 hover:text-white wellness-anim">CGU</Link></li>
+            <li><Link href="/cgv" className="text-white/65 hover:text-white wellness-anim">CGV</Link></li>
+            <li><Link href="/politique-confidentialite" className="text-white/65 hover:text-white wellness-anim">Confidentialité</Link></li>
             <li><Link href="/legal/contests-rules" className="text-white/65 hover:text-white wellness-anim">Règlement concours</Link></li>
             <li><Link href="/legal/disclaimer-medical" className="text-white/65 hover:text-white wellness-anim">Avertissement bien-être</Link></li>
           </ul>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Input } from "@/components/ui/Input";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { GoogleButton } from "./GoogleButton";
 import { AppleButton } from "./AppleButton";
 import { createClient } from "@/lib/supabase/client";
+import LegalAcceptanceNotice from "@/lib/legal/components/LegalAcceptanceNotice";
 
 const SignupSchema = z.object({
   fullName: z.string().min(2, "Indique au moins 2 caractères"),
@@ -62,6 +62,17 @@ export function SignupForm() {
       return;
     }
 
+    // Preuve d'acceptation CGU/CGV/politique — best-effort, ne bloque jamais l'inscription.
+    // No-op silencieux si la session n'est pas encore active (confirmation email en attente) :
+    // LegalReacceptanceGate reste la garde-fou lors de la 1ère connexion effective.
+    for (const docType of ["cgu", "cgv", "confidentialite"] as const) {
+      fetch("/api/legal/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ docType }),
+      }).catch(() => {});
+    }
+
     toast.success("Bienvenue chez toi.", {
       description: "Vérifie ta boîte mail si demandé. Sinon, on te conduit au dashboard.",
     });
@@ -109,20 +120,18 @@ export function SignupForm() {
           hint="8 caractères minimum"
           error={errors.password}
         />
+        <div className="text-center [&_a]:text-white/65">
+          <LegalAcceptanceNotice
+            actionLabel="Créer mon espace"
+            cguHref="/cgu"
+            cgvHref="/cgv"
+            confidentialiteHref="/politique-confidentialite"
+          />
+        </div>
         <Button type="submit" loading={submitting} className="w-full">
           Créer mon espace
         </Button>
       </form>
-
-      <p className="text-xs text-white/45 text-center leading-relaxed">
-        En continuant, tu acceptes nos{" "}
-        <Link href="/legal/cgu" className="text-white/65 underline-offset-4 hover:underline">CGU</Link>{" "}
-        et notre{" "}
-        <Link href="/legal/privacy" className="text-white/65 underline-offset-4 hover:underline">
-          politique de confidentialité
-        </Link>
-        .
-      </p>
     </div>
   );
 }

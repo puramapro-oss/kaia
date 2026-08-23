@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { LunaMode } from "@/lib/luna/modes";
 import LunaAvatar from "./LunaAvatar";
+import AIDisclosure from "@/lib/legal/components/AIDisclosure";
 
 interface Message {
   role: "user" | "assistant";
@@ -106,8 +107,9 @@ export default function LunaChatInterface({ mode = "general" }: LunaChatInterfac
   return (
     <div className="h-full flex flex-col">
       {/* Disclaimer bar */}
-      <div className="bg-kaia-rose/10 border-b border-kaia-rose/20 px-4 py-2 text-xs text-white/70 text-center">
-        LUNA n'est pas un médecin. Informations non médicales. En cas de crise: <strong>3114</strong>
+      <div className="bg-kaia-rose/10 border-b border-kaia-rose/20 px-4 py-2 text-xs text-white/70 text-center space-y-1">
+        <AIDisclosure appName="KAÏA" className="text-white/70" />
+        <p>LUNA n'est pas un médecin. Informations non médicales. En cas de crise: <strong>3114</strong></p>
       </div>
 
       {/* Messages */}

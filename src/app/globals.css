@@ -14,6 +14,15 @@
   --color-kaia-night: #0d0d1a;
   --color-kaia-soft: #14141c;
   --color-super-admin-gold: #ffd700;
+
+  /* Tokens génériques pour le socle légal partagé (@/lib/legal) — mappés sur la palette KAÏA. */
+  --color-primary: #c8b9f0;
+  --color-primary-on-dark: #c8b9f0;
+  --color-secondary: #e8c87a;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-background-soft: #14141c;
+  --color-muted-foreground: rgba(245, 245, 250, 0.6);
+  --color-destructive: #ef4444;
 }
 
 :root {
