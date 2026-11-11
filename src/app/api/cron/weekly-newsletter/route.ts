@@ -20,6 +20,10 @@ export const maxDuration = 60;
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://kaia.purama.dev";
 
+function isNonNegativeCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
 export async function GET(request: NextRequest) {
   if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,42 +42,76 @@ export async function GET(request: NextRequest) {
   const campaignSlug = `weekly-${week}`;
 
   // Charge stats impact
-  const { data: globalImpact } = await admin
+  const { data: globalImpact, error: impactErr } = await admin
     .from("global_impact")
-    .select("active_users_30d, total_practices_completed, trees_planted")
+    .select("active_users_30d, trees_planted")
     .order("computed_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const activeUsers = (globalImpact?.active_users_30d as number) ?? 0;
-  const treesPlanted = (globalImpact?.trees_planted as number) ?? 0;
+  if (
+    impactErr || !globalImpact ||
+    !isNonNegativeCount(globalImpact.active_users_30d) ||
+    !isNonNegativeCount(globalImpact.trees_planted)
+  ) {
+    return NextResponse.json({ error: "Statistiques d’impact indisponibles." }, { status: 503 });
+  }
+  const activeUsers = globalImpact.active_users_30d;
+  const treesPlanted = globalImpact.trees_planted;
 
   // Pratiques cette semaine
   const startOfWeek = new Date();
   startOfWeek.setUTCDate(startOfWeek.getUTCDate() - 7);
-  const { count: practicesCount } = await admin
+  const { count: practicesCount, error: practicesErr } = await admin
     .from("practice_sessions")
     .select("id", { count: "exact", head: true })
     .gte("completed_at", startOfWeek.toISOString());
+  if (practicesErr || !isNonNegativeCount(practicesCount)) {
+    return NextResponse.json({ error: "Statistiques des pratiques indisponibles." }, { status: 503 });
+  }
 
   const { practice, quote } = pickWeeklyContent(week);
 
   // Récupère les abonnés non encore envoyés cette campagne
-  const { data: alreadySent } = await admin
+  const { data: alreadySent, error: sentErr } = await admin
     .from("newsletter_sends")
     .select("email")
     .eq("campaign_slug", campaignSlug);
-  const sentEmails = new Set((alreadySent ?? []).map((r) => r.email as string));
+  if (sentErr || !alreadySent) {
+    return NextResponse.json({ error: "Historique de la campagne indisponible." }, { status: 503 });
+  }
+  const sentEmails = new Set(alreadySent.map((r) => r.email as string));
 
-  const { data: subscribers } = await admin
+  const { data: subscribers, error: subscribersErr } = await admin
     .from("newsletter_subscriptions")
     .select("email, locale, unsubscribe_token, user_id")
     .eq("status", "subscribed")
     .order("subscribed_at", { ascending: true })
     .limit(50);
+  if (subscribersErr || !subscribers) {
+    return NextResponse.json({ error: "Abonnements indisponibles." }, { status: 503 });
+  }
 
-  const todo = (subscribers ?? []).filter((s) => !sentEmails.has(s.email as string));
+  const todo = subscribers.filter((s) => !sentEmails.has(s.email as string));
   if (todo.length === 0) {
     return NextResponse.json({ ok: true, campaignSlug, sent: 0, message: "no_subscribers_pending" });
+  }
+
+  // Complete the remaining source reads before the first possible send.
+  const userIds = [...new Set(todo.map((s) => s.user_id).filter(
+    (userId): userId is string => typeof userId === "string" && userId.length > 0,
+  ))];
+  const names = new Map<string, string>();
+  if (userIds.length > 0) {
+    const { data: profiles, error: profilesErr } = await admin
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+    if (profilesErr || !profiles) {
+      return NextResponse.json({ error: "Profils des destinataires indisponibles." }, { status: 503 });
+    }
+    for (const profile of profiles) {
+      names.set(profile.id as string, (profile.full_name as string | null) ?? "toi");
+    }
   }
 
   const resend = new Resend(apiKey);
@@ -84,16 +122,7 @@ export async function GET(request: NextRequest) {
 
   for (const s of todo) {
     try {
-      // Récup nom
-      let name = "toi";
-      if (s.user_id) {
-        const { data: profile } = await admin
-          .from("profiles")
-          .select("full_name")
-          .eq("id", s.user_id as string)
-          .maybeSingle();
-        name = (profile?.full_name as string) ?? name;
-      }
+      const name = names.get(s.user_id as string) ?? "toi";
 
       const html = buildLivingNewsletterHtml({
         recipientName: name,
@@ -102,7 +131,7 @@ export async function GET(request: NextRequest) {
         campaignSlug,
         impactStats: {
           activeUsers,
-          practicesThisWeek: practicesCount ?? 0,
+          practicesThisWeek: practicesCount,
           treesPlanted,
         },
         microPracticeTitle: practice.title,
