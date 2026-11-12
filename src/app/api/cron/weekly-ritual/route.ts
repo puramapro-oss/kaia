@@ -7,6 +7,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { isAuthorizedCron } from "@/lib/cron-auth";
 import { askClaudeJSON } from "@/lib/claude";
 import {
   isoWeekSlug,
@@ -25,21 +26,8 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-function isAuthorized(request: NextRequest): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) {
-    const host = request.headers.get("host") ?? "";
-    return host.startsWith("localhost") || host.startsWith("127.0.0.1");
-  }
-  const auth = request.headers.get("authorization");
-  if (auth === `Bearer ${expected}`) return true;
-  const url = new URL(request.url);
-  if (url.searchParams.get("secret") === expected) return true;
-  return false;
-}
-
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -51,11 +39,18 @@ export async function GET(request: NextRequest) {
   const admin = createServiceClient();
 
   // Idempotency : on lit avant
-  const { data: existing } = await admin
+  const { data: existing, error: existingErr } = await admin
     .from("weekly_rituals")
     .select("id, slug, theme, participants_count")
     .eq("slug", slug)
     .maybeSingle();
+
+  if (existingErr) {
+    return NextResponse.json(
+      { error: "Lecture du rituel existant impossible." },
+      { status: 500 },
+    );
+  }
 
   if (existing) {
     return NextResponse.json({
