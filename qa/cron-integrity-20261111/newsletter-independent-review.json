@@ -1,0 +1,74 @@
+{
+  "schema": "purama.independent-review.v1",
+  "reviewer": "/root/infra_state",
+  "reviewed_at_utc": "2026-11-11T23:17:23Z",
+  "status": "PASS_SCOPED_REVIEW",
+  "scope": "KAIA weekly newsletter preflight source integrity; read-only independent review and targeted tests. No provider sending or production qualification.",
+  "base_head_at_test": "f8266d44fd1c4af1d7fc7b63f3329c2994e05ef5",
+  "head_at_report": "f8266d44fd1c4af1d7fc7b63f3329c2994e05ef5",
+  "sources_unchanged_since_test": true,
+  "findings_blocking_in_delta": [],
+  "checked": [
+    "Shared cron authorization runs before service-client creation; missing cron secret and spoofed localhost Host do not grant access.",
+    "Missing Resend key rejects before database lookup.",
+    "global_impact selects only active_users_30d and trees_planted; removed unused total_practices_completed absent in inspected repository migrations.",
+    "Impact result absent, error, missing count or invalid count rejects503; true zero accepted.",
+    "Practice count must be a nonnegative safe integer and no read error may be present.",
+    "Campaign-send history and subscriber reads reject errors and null results before client construction; genuine empty arrays preserve no-pending behavior.",
+    "Unique eligible user ids fetched in one profiles read before any email send; errors and null response reject before client construction.",
+    "Confirmed absent profiles keep generic greeting; email-only subscribers do not require a profile query.",
+    "Real HTML template receives verified counts and personalized names; template already escapes names.",
+    "All five preflight source read error paths finish before new Resend and before send/insert; no zero substitution follows a read failure."
+  ],
+  "independent_test": {
+    "evidence": "/workspace/scratch/f47c1fc0a918/infra-state/kaia-newsletter-independent-tests.json",
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "src/app/api/cron/weekly-newsletter/route.test.ts",
+      "--maxWorkers=1",
+      "--minWorkers=1"
+    ],
+    "exit_code": 0,
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "framework": "Vitest2.1.9",
+    "network": "Supabase and Resend mocked; global fetch throws; real email template used",
+    "source_stable_during_run": true,
+    "warning": "Vite CJS Node API deprecation warning, not a test failure"
+  },
+  "continuity": {
+    "prior_review": "/workspace/scratch/f47c1fc0a918/infra-state/kaia-review-final.json",
+    "prior_51_case_product_and_test_sources_unchanged": true,
+    "total_unique_cases_supported": 73,
+    "arithmetic": "51 unchanged prior cases + 22 new newsletter cases; repeat runs not added",
+    "author_reported_full_73_run": true
+  },
+  "sha256": {
+    "src/lib/cron-auth.ts": "be808fecd67b0a3de73c1937a8afcfa78cd17f969d2b3e754d4f82fb3d78fe7d",
+    "src/lib/contests/cron-helpers.ts": "58c88fdef0c7679055caf5e3503ce64da6ad5e59e911594dae7fc6bd46bc7c40",
+    "src/app/api/cron/daily-impact-aggregate/route.ts": "1f5b54f83c2b396eade459f54de1a85e40cb4c20e8bbc00419973e8f3910dcf5",
+    "src/app/api/cron/weekly-ritual/route.ts": "3d96730f47dd8656a34f69d1a975cef862d6492d8e148c9ed6528dfed7f2dd96",
+    "src/lib/cron-auth.test.ts": "d3511e384411e0d6490bb56e78eae8ea5cac36a7c351dc16ba6ae3b4823a422e",
+    "src/app/api/cron/daily-impact-aggregate/route.test.ts": "fc4afc80e4bc3f671fd22316b0d341abbd53cc6390d56704523b66e6dc1d9673",
+    "src/app/api/cron/weekly-ritual/route.auth.test.ts": "6cb539e3031350fdb9a06bbc2bd61768cf1a24e9ec6370d6ed61f73f7e5b548f",
+    "src/app/api/cron/weekly-newsletter/route.ts": "f30871001811f594eb071b6e24c867c277ae72f5a726fb1d90fba5bf89721d8d",
+    "src/app/api/cron/weekly-newsletter/route.test.ts": "2128067e2ade659ee73d4e5665974b6c1f4e7a3a5661919b5b0af695fd5bf94a",
+    "supabase/migrations/0001_init_kaia.sql": "8bf32b508e8d0675ad3542627d740d1fc6ebf3627f4eaa5f257e4541a0697b29",
+    "package-lock.json": "01d6dd6659f7915ab0be7e1200c25476cb0a8e997cbc4923e7330cbc581364b9",
+    "vitest.config.ts": "4a61613f4cfdd71f1fb4fa945f2b0f001e560dd3684ef71da0645a9390d4db25"
+  },
+  "diff_check": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "remaining_limits": [
+    "Downstream Resend response handling and database write receipts are unchanged and not certified by this preflight delta.",
+    "Existing pagination, first50 subscriber selection and concurrency/idempotence across separate invocations are unchanged and not certified.",
+    "Preflight reads do not form a shared database snapshot; no real PostgreSQL/Supabase behavior, provider sending, account setup, clean full npm ci or production build verified by this reviewer.",
+    "No live email, external message, workflow rerun, deployment or product mutation by reviewer."
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "repository": "puramapro-oss/kaia",
+  "base_commit": "d8aca51b38e47695d495bf88ad8ae033b8828307",
+  "recorded_at_utc": "2026-11-11T23:04:01.447384+00:00",
+  "status": "PARTIEL",
+  "fixed_and_locally_verified": [
+    "Missing CRON_SECRET never authenticates a request via Host",
+    "The contested alias and two previously duplicated route guards reuse isAuthorizedCron",
+    "Failed or absent input query does not overwrite global impact",
+    "Unknown existing ritual lookup does not generate or insert a ritual",
+    "Newsletter selects only existing global_impact columns",
+    "Newsletter source errors, absent results and invalid counts abort before client creation or any send",
+    "All recipient profiles are read before the first send; confirmed empty profiles keep the generic greeting"
+  ],
+  "test_command": "./node_modules/.bin/vitest run src/lib/cron-auth.test.ts src/app/api/cron/daily-impact-aggregate/route.test.ts src/app/api/cron/weekly-ritual/route.auth.test.ts src/app/api/cron/weekly-newsletter/route.test.ts --maxWorkers=1 --minWorkers=1 --reporter=json",
+  "working_directory": "/workspace/scratch/f47c1fc0a918/repos-backlog/kaia",
+  "environment": {
+    "node": "v24.22.1",
+    "next": "16.2.11",
+    "vitest": "2.1.9",
+    "typescript": "5.9.3",
+    "runtime": "Isolated subset of dependencies, exact listed versions match repository lock; not a complete npm ci",
+    "resend": "4.8.0; client constructor and send replaced in tests"
+  },
+  "tests": [
+    {
+      "stage": "original code / 48 regressions",
+      "report": "kaia-before.json",
+      "exit_code": 1,
+      "total": 48,
+      "passed": 22,
+      "failed": 26,
+      "pending": 0,
+      "sha256": "56261bed4472818715491009c23a5cc0fc2be2393e0b2fc3077fc31375a8a8e0"
+    },
+    {
+      "stage": "authorization and aggregation corrected",
+      "report": "kaia-after.json",
+      "exit_code": 0,
+      "total": 48,
+      "passed": 48,
+      "failed": 0,
+      "pending": 0,
+      "sha256": "ed54aea6443b29446d388c612f0e22cb29845429a680648f84cf2bc71e3b46a5"
+    },
+    {
+      "stage": "additional weekly lookup regressions before guard",
+      "report": "kaia-weekly-before.json",
+      "exit_code": 1,
+      "total": 51,
+      "passed": 49,
+      "failed": 2,
+      "pending": 0,
+      "sha256": "d198629f27f18dc61a9e1600b53548156643eb87ae923d934c6c5853cc8a437c"
+    },
+    {
+      "stage": "final corrected code",
+      "report": "kaia-final.json",
+      "exit_code": 0,
+      "total": 51,
+      "passed": 51,
+      "failed": 0,
+      "pending": 0,
+      "sha256": "accc69e4585805c2fd834562cb3191d94ac49c1b1bfd83fb0818e02b6e19a537"
+    },
+    {
+      "stage": "newsletter source regressions on previous code",
+      "report": "kaia-newsletter-before.json",
+      "exit_code": 1,
+      "total": 22,
+      "passed": 8,
+      "failed": 14,
+      "pending": 0,
+      "sha256": "be76b07e7506e5fa658b460ec591fea3c3841c9501e4f04b5aeebd6687cf29ca"
+    },
+    {
+      "stage": "final combined four-suite run",
+      "report": "kaia-newsletter-final.json",
+      "exit_code": 0,
+      "total": 73,
+      "passed": 73,
+      "failed": 0,
+      "pending": 0,
+      "sha256": "aa03980cf0121938bc65955c71ce47acb355db8e1c02d5009c3ab5387afb2dcf"
+    }
+  ],
+  "targeted_typecheck": {
+    "exit_code": 0,
+    "scope": [
+      "shared authorization",
+      "contest alias",
+      "daily aggregation handler and tests",
+      "newsletter handler, real template and source-integrity tests"
+    ],
+    "weekly_full_typecheck": "NOT RUN; provider dependency graph not installed"
+  },
+  "diff_check": {
+    "exit_code": 0
+  },
+  "source_sha256": {
+    "src/lib/cron-auth.ts": "be808fecd67b0a3de73c1937a8afcfa78cd17f969d2b3e754d4f82fb3d78fe7d",
+    "src/lib/contests/cron-helpers.ts": "58c88fdef0c7679055caf5e3503ce64da6ad5e59e911594dae7fc6bd46bc7c40",
+    "src/app/api/cron/daily-impact-aggregate/route.ts": "1f5b54f83c2b396eade459f54de1a85e40cb4c20e8bbc00419973e8f3910dcf5",
+    "src/app/api/cron/weekly-ritual/route.ts": "3d96730f47dd8656a34f69d1a975cef862d6492d8e148c9ed6528dfed7f2dd96",
+    "src/lib/cron-auth.test.ts": "d3511e384411e0d6490bb56e78eae8ea5cac36a7c351dc16ba6ae3b4823a422e",
+    "src/app/api/cron/daily-impact-aggregate/route.test.ts": "fc4afc80e4bc3f671fd22316b0d341abbd53cc6390d56704523b66e6dc1d9673",
+    "src/app/api/cron/weekly-ritual/route.auth.test.ts": "6cb539e3031350fdb9a06bbc2bd61768cf1a24e9ec6370d6ed61f73f7e5b548f",
+    "vercel.json": "18d9ff2cc8fe7fc367dd08a67dd7f24d9957160f1ca7b0783f86366204ffe4bb",
+    "src/app/api/cron/weekly-newsletter/route.ts": "f30871001811f594eb071b6e24c867c277ae72f5a726fb1d90fba5bf89721d8d",
+    "src/app/api/cron/weekly-newsletter/route.test.ts": "2128067e2ade659ee73d4e5665974b6c1f4e7a3a5661919b5b0af695fd5bf94a"
+  },
+  "not_qualified": [
+    "Production DB, historical CRON HTTP500 root cause and actual environment secret configuration",
+    "Full application installation, global lint/types/build and CI",
+    "Large datasets/pagination or transaction snapshot aggregation",
+    "Concurrent weekly generation and real inference providers",
+    "Newsletter provider responses, post-send recording, full pagination and concurrent campaign delivery remain outside this source-read correction"
+  ],
+  "deployment": {
+    "branch_guard": "codex/kaia-cron-integrity-20261111=false",
+    "production_migration": false,
+    "merge": false,
+    "deploy": false,
+    "financial_or_provider_call": false
+  },
+  "independent_review": {
+    "status": "PASS_SCOPED_REVIEW",
+    "file": "independent-review.json",
+    "sha256": "641aee09ea67b38bee76e49c913b518555f9137a9bc98d575e3a093dd94350b0",
+    "unique_tests_supported": 51
+  },
+  "updated_at_utc": "2026-11-11T23:17:57.377935+00:00",
+  "followup_base_commit": "f8266d44fd1c4af1d7fc7b63f3329c2994e05ef5",
+  "newsletter_independent_review": {
+    "status": "PASS_SCOPED_REVIEW",
+    "file": "newsletter-independent-review.json",
+    "sha256": "dd013e52eef04882d37109bea43fd1c402efd6783eff07ad35fd0a3f0d7805d0",
+    "targeted_tests_passed": 22,
+    "prior_cases_source_hashes_unchanged": 51,
+    "unique_tests_supported": 73
+  }
+}

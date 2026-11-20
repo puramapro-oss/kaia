@@ -1,5 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { quickLocalCheck } from "../classifier";
+
+// Ces cas qualifient le filtre local, sans charger le client serveur ni ses clés.
+// Un appel accidentel au classificateur distant fait échouer la suite.
+const { askClaudeJSON } = vi.hoisted(() => ({
+  askClaudeJSON: vi.fn(() => {
+    throw new Error("Le filtrage local ne doit pas appeler l’IA distante");
+  }),
+}));
+vi.mock("@/lib/claude", () => ({ askClaudeJSON }));
+
+afterEach(() => {
+  expect(askClaudeJSON).not.toHaveBeenCalled();
+  vi.clearAllMocks();
+});
 
 describe("quickLocalCheck", () => {
   it("message normal → safe", () => {
