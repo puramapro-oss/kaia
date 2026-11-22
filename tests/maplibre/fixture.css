@@ -1,0 +1,4 @@
+body { margin: 16px; background: #111; color: white; font: 16px system-ui; }
+button { margin: 4px; padding: 8px; }
+section { margin: 12px 0; }
+.maplibregl-map { width: 640px; height: 320px; }

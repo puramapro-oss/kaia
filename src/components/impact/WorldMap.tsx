@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibre, type GeoJSONSource } from "maplibre-gl";
+import type { Map as MapLibre, GeoJSONSource } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -16,6 +16,7 @@ import {
 export function WorldMap() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibre | null>(null);
+  const pointsRef = useRef<ImpactPoint[]>([]);
   const [points, setPoints] = useState<ImpactPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,120 +100,132 @@ export function WorldMap() {
     if (!containerRef.current) return;
     if (mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: OSM_STYLE,
-      center: [2.5, 30],
-      zoom: 1.6,
-      minZoom: 1,
-      maxZoom: 8,
-      attributionControl: { compact: true },
+    let active = true;
+    let ownedMap: MapLibre | null = null;
+    void (async () => {
+      const maplibregl = (await import("@/lib/maplibre")).default;
+      if (!active || !containerRef.current) return;
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: OSM_STYLE,
+        center: [2.5, 30],
+        zoom: 1.6,
+        minZoom: 1,
+        maxZoom: 8,
+        attributionControl: { compact: true },
+      });
+
+      ownedMap = map;
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+      map.on("load", () => {
+        if (!active) return;
+        map.addSource("impact", {
+          type: "geojson",
+          data: pointsToGeoJSON(pointsRef.current),
+          cluster: true,
+          clusterRadius: 40,
+        });
+
+        map.addLayer({
+          id: "impact-clusters",
+          type: "circle",
+          source: "impact",
+          filter: ["has", "point_count"],
+          paint: {
+            "circle-color": "#06B6D4",
+            "circle-opacity": 0.32,
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              14,
+              10,
+              18,
+              50,
+              22,
+              200,
+              28,
+            ],
+            "circle-stroke-color": "#06B6D4",
+            "circle-stroke-width": 1,
+            "circle-stroke-opacity": 0.7,
+          },
+        });
+        map.addLayer({
+          id: "impact-cluster-count",
+          type: "symbol",
+          source: "impact",
+          filter: ["has", "point_count"],
+          layout: {
+            "text-field": ["get", "point_count_abbreviated"],
+            "text-size": 11,
+          },
+          paint: {
+            "text-color": "#FFFEF7",
+          },
+        });
+
+        map.addLayer({
+          id: "impact-points",
+          type: "circle",
+          source: "impact",
+          filter: ["!", ["has", "point_count"]],
+          paint: {
+            "circle-color": ["get", "color"],
+            "circle-radius": 6,
+            "circle-blur": 0.4,
+            "circle-opacity": 0.85,
+            "circle-stroke-color": "#FFFEF7",
+            "circle-stroke-width": 1,
+            "circle-stroke-opacity": 0.6,
+          },
+        });
+
+        map.on("click", "impact-points", (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+          const props = (f.properties ?? {}) as { label?: string; amount?: number; created_at?: string };
+          const dateStr = props.created_at
+            ? new Intl.DateTimeFormat("fr-FR", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }).format(new Date(props.created_at))
+            : "";
+          const html = `<div style="color:#FFFEF7;font-family:Inter,system-ui;padding:6px 4px">
+            <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.55">${dateStr}</div>
+            <div style="font-size:14px;margin-top:2px">${props.label ?? "Action"}</div>
+            <div style="font-size:12px;opacity:0.7;margin-top:4px">Quantité : ${props.amount ?? "—"}</div>
+          </div>`;
+          new maplibregl.Popup({ closeButton: false, offset: 12 })
+            .setLngLat(coords)
+            .setHTML(html)
+            .addTo(map);
+        });
+
+        map.on("mouseenter", "impact-points", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "impact-points", () => {
+          map.getCanvas().style.cursor = "";
+        });
+      });
+
+      mapRef.current = map;
+    })().catch(() => {
+      if (active) setError("La carte ne peut pas s’afficher sur cet appareil.");
     });
-
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-
-    map.on("load", () => {
-      map.addSource("impact", {
-        type: "geojson",
-        data: pointsToGeoJSON([]),
-        cluster: true,
-        clusterRadius: 40,
-      });
-
-      map.addLayer({
-        id: "impact-clusters",
-        type: "circle",
-        source: "impact",
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": "#06B6D4",
-          "circle-opacity": 0.32,
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            14,
-            10,
-            18,
-            50,
-            22,
-            200,
-            28,
-          ],
-          "circle-stroke-color": "#06B6D4",
-          "circle-stroke-width": 1,
-          "circle-stroke-opacity": 0.7,
-        },
-      });
-      map.addLayer({
-        id: "impact-cluster-count",
-        type: "symbol",
-        source: "impact",
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": ["get", "point_count_abbreviated"],
-          "text-size": 11,
-        },
-        paint: {
-          "text-color": "#FFFEF7",
-        },
-      });
-
-      map.addLayer({
-        id: "impact-points",
-        type: "circle",
-        source: "impact",
-        filter: ["!", ["has", "point_count"]],
-        paint: {
-          "circle-color": ["get", "color"],
-          "circle-radius": 6,
-          "circle-blur": 0.4,
-          "circle-opacity": 0.85,
-          "circle-stroke-color": "#FFFEF7",
-          "circle-stroke-width": 1,
-          "circle-stroke-opacity": 0.6,
-        },
-      });
-
-      map.on("click", "impact-points", (e) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
-        const props = (f.properties ?? {}) as { label?: string; amount?: number; created_at?: string };
-        const dateStr = props.created_at
-          ? new Intl.DateTimeFormat("fr-FR", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(props.created_at))
-          : "";
-        const html = `<div style="color:#FFFEF7;font-family:Inter,system-ui;padding:6px 4px">
-          <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.55">${dateStr}</div>
-          <div style="font-size:14px;margin-top:2px">${props.label ?? "Action"}</div>
-          <div style="font-size:12px;opacity:0.7;margin-top:4px">Quantité : ${props.amount ?? "—"}</div>
-        </div>`;
-        new maplibregl.Popup({ closeButton: false, offset: 12 })
-          .setLngLat(coords)
-          .setHTML(html)
-          .addTo(map);
-      });
-
-      map.on("mouseenter", "impact-points", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "impact-points", () => {
-        map.getCanvas().style.cursor = "";
-      });
-    });
-
-    mapRef.current = map;
     return () => {
-      map.remove();
-      mapRef.current = null;
+      active = false;
+      ownedMap?.remove();
+      if (mapRef.current === ownedMap) mapRef.current = null;
     };
   }, []);
 
-  // Push points → source.
+  // Push points → source, including data arriving before the map module loads.
   useEffect(() => {
+    pointsRef.current = points;
     const map = mapRef.current;
     if (!map) return;
     const apply = () => {

@@ -5,22 +5,34 @@
  *  3. Charge les entries
  *  4. Calcule winners + signature via drawContest()
  *  5. (best-effort) stamp OpenTimestamps
- *  6. Insert via RPC record_contest_winners (atomique) — fallback UPDATE direct si RPC absente
+ *  6. Enregistre via record_contest_winners et exige son accusé de succès
  *  7. Crédite les gains aux gagnants (tokens via apply_token_event ; subscription_credit → notif Resend en P8)
  */
 import type { createServiceClient } from "@/lib/supabase/admin";
 import { drawContest } from "./draw-rules";
 import type { ContestPrize, ContestRow } from "./types";
+import { stampHashHex } from "@/lib/opentimestamps";
 
 type AdminClient = ReturnType<typeof createServiceClient>;
 
 export interface RunDrawResult {
   drew: boolean;
   reason?: string;
+  /** A write may already be committed: inspect persisted winners/events before retrying. */
+  reconciliationRequired?: boolean;
   winnersCount?: number;
   totalParticipants?: number;
   totalTickets?: number;
   signature?: string;
+}
+
+function acknowledgement(value: unknown): { applied: boolean; reason: string } | null {
+  const row = Array.isArray(value) ? (value.length === 1 ? value[0] : null) : value;
+  if (!row || typeof row !== "object") return null;
+  const result = row as { applied?: unknown; reason?: unknown };
+  return typeof result.applied === "boolean" && typeof result.reason === "string"
+    ? { applied: result.applied, reason: result.reason }
+    : null;
 }
 
 export async function runContestDraw(params: {
@@ -36,16 +48,18 @@ export async function runContestDraw(params: {
     .select("*")
     .eq("id", contestId)
     .maybeSingle<ContestRow>();
-  if (cErr || !contest) return { drew: false, reason: "contest_not_found" };
+  if (cErr) return { drew: false, reason: "contest_read_failed" };
+  if (!contest) return { drew: false, reason: "contest_not_found" };
   if (contest.status === "completed") return { drew: false, reason: "already_drawn" };
   if (new Date(contest.ends_at) > now) return { drew: false, reason: "window_open" };
 
-  const { data: entries } = await admin
+  const { data: entries, error: entriesError } = await admin
     .from("contest_entries")
     .select("user_id, tickets")
     .eq("contest_id", contestId);
+  if (entriesError || !Array.isArray(entries)) return { drew: false, reason: "entries_unavailable" };
 
-  const drawInput = (entries ?? []).map((e) => ({
+  const drawInput = entries.map((e) => ({
     userId: e.user_id as string,
     tickets: e.tickets as number,
   }));
@@ -59,27 +73,12 @@ export async function runContestDraw(params: {
     prizesCount,
   });
 
-  // Best-effort OpenTimestamps stamp (lib optionnelle, pas critique pour le tirage)
-  let otsBase64 = "";
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ots = require("javascript-opentimestamps");
-    if (ots && typeof ots.DetachedTimestampFile?.fromHash === "function") {
-      const hashBuf = Buffer.from(draw.signature, "hex");
-      const detached = ots.DetachedTimestampFile.fromHash(new ots.Ops.OpSHA256(), hashBuf);
-      // Stamp est asynchrone et peut échouer hors ligne — on n'attend pas
-      try {
-        await ots.stamp(detached);
-        otsBase64 = Buffer.from(detached.serializeToBytes()).toString("base64");
-      } catch {
-        otsBase64 = "";
-      }
-    }
-  } catch {
-    // Lib indisponible — on poursuit sans
-  }
+  // Best-effort receipt, bounded by the shared transport. A receipt is provisional;
+  // failed calendars must not persist a bare proof as a successful timestamp.
+  const otsBase64 = (await stampHashHex(draw.signature)) ?? "";
 
-  // Tentative RPC atomique
+  // Only the atomic RPC may decide which request owns this draw. A transport
+  // failure can be ambiguous; a direct UPDATE must never bypass its lock.
   const winnersJson = draw.winners as unknown as Array<Record<string, unknown>>;
   const rpc = await admin.rpc("record_contest_winners", {
     p_contest_id: contestId,
@@ -88,20 +87,25 @@ export async function runContestDraw(params: {
     p_ots: otsBase64,
   });
   if (rpc.error) {
-    // Fallback UPDATE
-    await admin
-      .from("contests")
-      .update({
-        status: "completed",
-        winners: winnersJson,
-        proof_signature: draw.signature,
-        proof_timestamp_ots: otsBase64 || null,
-        draw_seed: draw.seed,
-      })
-      .eq("id", contestId);
-  } else {
-    await admin.from("contests").update({ draw_seed: draw.seed }).eq("id", contestId);
+    return { drew: false, reason: "draw_recording_failed", reconciliationRequired: true };
   }
+  const recorded = acknowledgement(rpc.data);
+  if (recorded?.applied === false && ["already_drawn", "contest_not_found", "invalid_winners", "invalid_signature"].includes(recorded.reason)) {
+    return { drew: false, reason: recorded.reason };
+  }
+  if (!recorded?.applied || recorded.reason !== "ok") {
+    return { drew: false, reason: "draw_recording_unconfirmed", reconciliationRequired: true };
+  }
+
+  // These writes are not part of the recording transaction. Their failures
+  // require reconciliation; never claim all prizes were applied or replay them.
+  const { data: seedRow, error: seedError } = await admin
+    .from("contests")
+    .update({ draw_seed: draw.seed })
+    .eq("id", contestId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (seedError || seedRow?.id !== contestId) return { drew: false, reason: "draw_recorded_seed_failed", reconciliationRequired: true };
 
   // Crédits aux gagnants — tokens uniquement en Phase 1
   for (const w of draw.winners) {
@@ -109,13 +113,18 @@ export async function runContestDraw(params: {
     if (!prize) continue;
     if (prize.type === "tokens") {
       const idemp = `contest_${contestId}_winner_${w.userId}_${w.rank}`;
-      await admin.rpc("apply_token_event", {
+      const credit = await admin.rpc("apply_token_event", {
         p_user_id: w.userId,
         p_delta: prize.value,
         p_reason: "contest_win_tokens",
         p_metadata: { contestId, rank: w.rank, signature: draw.signature },
         p_idempotency_key: idemp,
       });
+      if (credit.error) return { drew: false, reason: "draw_recorded_credit_failed", reconciliationRequired: true };
+      const applied = acknowledgement(credit.data);
+      if (!applied || !((applied.applied && applied.reason === "ok") || (!applied.applied && applied.reason === "idempotent_replay"))) {
+        return { drew: false, reason: "draw_recorded_credit_unconfirmed", reconciliationRequired: true };
+      }
     }
     // subscription_credit → handled in P8 (admin process Stripe credit balance)
   }

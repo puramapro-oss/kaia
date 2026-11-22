@@ -1,1 +1,1 @@
-declare module 'javascript-opentimestamps';
+// OpenTimestamps primitives are declared in ots-primitives.d.ts.

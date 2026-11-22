@@ -69,3 +69,10 @@ next-env.d.ts
 /PATTERNS.md
 /AGENTS.md
 /.claude/
+
+# Generated from the locked MapLibre package by prebuild/predev.
+/public/vendor/maplibre-gl-6.19.0/
+
+# Isolated map compatibility artifacts
+/tests/.maplibre-dist/
+/tests/.maplibre-results/

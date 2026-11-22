@@ -1,4 +1,13 @@
-import { createHash } from "crypto";
+import { createHash } from "node:crypto";
+import DetachedTimestampFile from "opentimestamps/src/detached-timestamp-file.js";
+import Ops from "opentimestamps/src/ops.js";
+import Context from "opentimestamps/src/context.js";
+import Timestamp from "opentimestamps/src/timestamp.js";
+import Notary from "opentimestamps/src/notary.js";
+import { createOtsClient, type OtsLibrary } from "./ots-core.ts";
+
+// Only official primitives are loaded. The legacy request transport is not used.
+const client = createOtsClient({ DetachedTimestampFile, Ops, Context, Timestamp, Notary } as OtsLibrary);
 
 export interface StampResult {
   sha256: string;
@@ -18,55 +27,46 @@ function sha256hex(data: string): string {
   return createHash("sha256").update(data, "utf8").digest("hex");
 }
 
-export async function stampData(data: string): Promise<StampResult> {
-  const sha256 = sha256hex(data);
-  const timestamp = Date.now();
-
+/** The argument is already a SHA-256 digest: never hash it a second time. */
+export async function stampHashHex(hash: string): Promise<string | null> {
+  if (typeof hash !== "string" || !/^[a-fA-F0-9]{64}$/.test(hash)) return null;
   try {
-    const OpenTimestamps = await import("javascript-opentimestamps").then(
-      (m) => m.default ?? m
-    );
-    const detached = OpenTimestamps.DetachedTimestampFile.fromHash(
-      new OpenTimestamps.Ops.OpSHA256(),
-      Buffer.from(sha256, "hex")
-    );
-    await OpenTimestamps.stamp(detached);
-    const serialized = Buffer.from(detached.serializeToBytes()).toString("base64");
-    return { sha256, timestamp, ots: serialized, method: "opentimestamps" };
+    return await client.stampDigest(Buffer.from(hash, "hex"));
   } catch {
-    return { sha256, timestamp, method: "sha256_fallback" };
+    return null;
   }
 }
 
-export async function verifyStamp(
-  data: string,
-  stamp: StampResult
-): Promise<VerifyResult> {
+export async function stampData(data: string): Promise<StampResult> {
   const sha256 = sha256hex(data);
+  const timestamp = Date.now();
+  const ots = await stampHashHex(sha256);
+  return ots
+    ? { sha256, timestamp, ots, method: "opentimestamps" }
+    : { sha256, timestamp, method: "sha256_fallback" };
+}
 
+export async function verifyStamp(data: string, stamp: StampResult): Promise<VerifyResult> {
+  const sha256 = sha256hex(data);
+  if (!stamp || !["opentimestamps", "sha256_fallback"].includes(stamp.method)) {
+    return { valid: false, sha256, method: "sha256_fallback", error: "invalid_stamp" };
+  }
   if (sha256 !== stamp.sha256) {
     return { valid: false, sha256, method: stamp.method, error: "hash_mismatch" };
   }
-
-  if (stamp.method === "sha256_fallback" || !stamp.ots) {
-    return { valid: true, sha256, method: "sha256_fallback" };
-  }
-
+  // This result means content integrity only, never a trusted timestamp.
+  if (stamp.method === "sha256_fallback") return { valid: true, sha256, method: "sha256_fallback" };
+  if (!stamp.ots) return { valid: false, sha256, method: "opentimestamps", error: "OTS_INVALID_PROOF" };
   try {
-    const OpenTimestamps = await import("javascript-opentimestamps").then(
-      (m) => m.default ?? m
-    );
-    const detached = OpenTimestamps.DetachedTimestampFile.deserialize(
-      Buffer.from(stamp.ots, "base64")
-    );
-    await OpenTimestamps.verify(detached);
-    return { valid: true, sha256, method: "opentimestamps" };
-  } catch (e) {
+    const result = await client.verifyDigest(Buffer.from(sha256, "hex"), stamp.ots, true);
+    // A well-formed pending receipt is not a verified Bitcoin attestation.
+    return result.bitcoin
+      ? { valid: true, sha256, method: "opentimestamps" }
+      : { valid: false, sha256, method: "opentimestamps", error: "OTS_PENDING" };
+  } catch (error) {
     return {
-      valid: false,
-      sha256,
-      method: "opentimestamps",
-      error: e instanceof Error ? e.message : "verify_failed",
+      valid: false, sha256, method: "opentimestamps",
+      error: error instanceof Error ? error.message : "OTS_VERIFICATION_FAILED",
     };
   }
 }
