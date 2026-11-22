@@ -35,7 +35,19 @@ jobs:
         with:
           node-version: 24.22.1
       - name: Verify private dependency setup guards offline
-        run: node --test scripts/bootstrap-shared-packages.test.mjs scripts/install-private-dependencies.test.mjs
+        run: node --test scripts/bootstrap-shared-packages.test.mjs scripts/install-private-dependencies.test.mjs scripts/project-public-audit.test.mjs
+      - name: Audit public registry package versions without sending the private graph
+        run: |
+          audit_dir="$RUNNER_TEMP/public-package-audit-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          node scripts/project-public-audit.mjs "$audit_dir"
+          config_dir="$(mktemp -d "$RUNNER_TEMP/public-audit-config.XXXXXX")"
+          mkdir -m 700 -- "$config_dir/home"
+          : > "$config_dir/user.npmrc"
+          : > "$config_dir/global.npmrc"
+          cd "$audit_dir"
+          env -i PATH="$PATH" HOME="$config_dir/home" npm audit --package-lock-only --ignore-scripts \
+            --registry=https://registry.npmjs.org --userconfig="$config_dir/user.npmrc" \
+            --globalconfig="$config_dir/global.npmrc" --audit-level=high
       - name: Read the immutable shared package revision
         id: shared
         run: node scripts/bootstrap-shared-packages.mjs --github-output
@@ -105,7 +117,16 @@ jobs:
           npm rebuild --no-audit --no-fund
           git diff --exit-code -- package.json package-lock.json
       - name: Run the standard application regression suite
-        run: npm test -- --maxWorkers=2 --minWorkers=1
+        run: npm test -- --maxWorkers=2
+      - name: Verify OpenTimestamps receipts and bounded transport offline
+        run: node --experimental-vm-modules --test tests/opentimestamps.test.mjs
+      - name: Prepare the actual maps and their locked same-origin worker
+        run: |
+          node scripts/prepare-map-worker.mjs
+          node node_modules/vite/bin/vite.js build --config tests/maplibre/vite.config.mts
+          node node_modules/playwright/cli.js install --with-deps chromium
+      - name: Verify both actual maps and the WebGL2 fallback on loopback fixtures
+        run: node node_modules/playwright/cli.js test --config tests/maplibre/playwright.config.ts
       - name: Generate route types and check the complete application TypeScript
         run: |
           node node_modules/next/dist/bin/next typegen

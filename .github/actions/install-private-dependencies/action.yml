@@ -1,0 +1,83 @@
+name: Install the locked KAIA dependencies
+description: Reuse verified private source acquisition without persistent repository credentials.
+
+inputs:
+  shared-source-key:
+    description: Read-only SSH key for the manifest-listed purama-master sources.
+    required: true
+  smarana-key:
+    description: Separate read-only SSH key for the locked purama-smarana dependency.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Verify admission and installation guards offline
+      shell: bash
+      run: node --test scripts/bootstrap-shared-packages.test.mjs scripts/install-private-dependencies.test.mjs scripts/project-public-audit.test.mjs
+
+    - name: Check dedicated private read credentials
+      shell: bash
+      env:
+        PACKAGE_SOURCE_KEY_PRESENT: ${{ inputs.shared-source-key != '' }}
+        SMARANA_KEY_PRESENT: ${{ inputs.smarana-key != '' }}
+      run: |
+        if [ "$PACKAGE_SOURCE_KEY_PRESENT" != true ] || [ "$SMARANA_KEY_PRESENT" != true ]; then
+          echo '::error::Separate read-only source and SMARANA SSH keys are required.'
+          exit 1
+        fi
+
+    - name: Retrieve only immutable manifest-listed source files
+      shell: bash
+      env:
+        PURAMA_PACKAGES_READ_SSH_KEY: ${{ inputs.shared-source-key }}
+        TMPDIR: ${{ runner.temp }}/kaia-native-source-auth-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+      run: |
+        mkdir -m 700 -- "$TMPDIR"
+        node scripts/install-private-dependencies.mjs --shared-source "$GITHUB_WORKSPACE/../kaia-shared-source"
+
+    - name: Remove temporary source authentication
+      if: always()
+      shell: bash
+      run: |
+        auth_dir="${{ runner.temp }}/kaia-native-source-auth-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}"
+        rm -rf -- "$auth_dir"
+        test ! -e "$auth_dir" && test ! -L "$auth_dir"
+
+    - name: Verify source digests and create the existing sibling package layout
+      shell: bash
+      run: node scripts/bootstrap-shared-packages.mjs "$GITHUB_WORKSPACE/../kaia-shared-source" "$GITHUB_WORKSPACE/../packages"
+
+    - name: Install the immutable lock without lifecycle scripts or audit disclosure
+      shell: bash
+      env:
+        SMARANA_READ_SSH_KEY: ${{ inputs.smarana-key }}
+        TMPDIR: ${{ runner.temp }}/kaia-native-install-auth-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+      run: |
+        mkdir -m 700 -- "$TMPDIR"
+        node scripts/install-private-dependencies.mjs
+        git diff --exit-code -- package.json package-lock.json tooling/shared-packages.lock.json
+
+    - name: Remove and verify temporary installation authentication
+      if: always()
+      shell: bash
+      run: |
+        auth_dir="${{ runner.temp }}/kaia-native-install-auth-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}"
+        rm -rf -- "$auth_dir"
+        test ! -e "$auth_dir" && test ! -L "$auth_dir"
+        node <<'NODE'
+        const { spawnSync } = require('node:child_process');
+        const env = { ...process.env };
+        for (const key of Object.keys(env)) if (key.startsWith('GIT_')) delete env[key];
+        Object.assign(env, { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' });
+        const result = spawnSync('git', ['config', '--local', '--no-includes', '--name-only', '--get-regexp',
+          '^(core\\.sshcommand|http\\..*\\.extraheader|credential\\..*|url\\..*\\.insteadof|include\\.path|includeif\\..*\\.path)$'],
+          { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 5000, maxBuffer: 65536 });
+        if (result.error || result.status !== 1 || result.stdout.trim()) throw new Error('Persistent checkout authentication remains or cannot be verified.');
+        NODE
+
+    - name: Run lifecycle scripts after private authentication removal
+      shell: bash
+      run: |
+        npm rebuild --no-audit --no-fund
+        git diff --exit-code -- package.json package-lock.json tooling/shared-packages.lock.json

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   // 1) Tire le concours qui vient de se terminer (window d'avant)
   // On regarde le contest dont ends_at < now et status != completed, kind='weekly', le plus récent
-  const { data: pendingDraws } = await admin
+  const { data: pendingDraws, error: listError } = await admin
     .from("contests")
     .select("id, slug, ends_at, status")
     .eq("kind", "weekly")
@@ -34,10 +34,15 @@ export async function GET(request: NextRequest) {
     .order("ends_at", { ascending: false })
     .limit(3);
 
+  if (listError) return NextResponse.json({ ok: false, reason: "contest_list_unavailable" }, { status: 503 });
+
   const drawnReports: Array<{ slug: string; result: unknown }> = [];
   for (const c of pendingDraws ?? []) {
     const r = await runContestDraw({ admin, contestId: c.id as string, now });
     drawnReports.push({ slug: c.slug as string, result: r });
+    if (!r.drew && r.reason !== "already_drawn") {
+      return NextResponse.json({ ok: false, reason: r.reason, drawn: drawnReports, reconciliationRequired: r.reconciliationRequired ?? false }, { status: 503 });
+    }
   }
 
   // 2) Crée le concours de la semaine prochaine (next Monday → Sunday)

@@ -50,8 +50,10 @@ export async function POST(request: NextRequest) {
           ? 409
           : result.reason === "window_open"
             ? 422
-            : 400;
-    return NextResponse.json({ ok: false, reason: result.reason }, { status });
+            : result.reconciliationRequired || ["contest_read_failed", "entries_unavailable"].includes(result.reason ?? "")
+              ? 503
+              : 400;
+    return NextResponse.json({ ok: false, reason: result.reason, reconciliationRequired: result.reconciliationRequired ?? false }, { status });
   }
 
   return NextResponse.json({

@@ -22,6 +22,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated from the locked MapLibre package and the browser fixture.
+    "public/vendor/maplibre-gl-6.19.0/**",
+    "tests/.maplibre-dist/**",
+    "tests/.maplibre-results/**",
   ]),
 ]);
 

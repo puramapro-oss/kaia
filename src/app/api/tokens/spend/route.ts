@@ -21,7 +21,7 @@ const Body = z.object({
   itemCostTokens: z.number().int().positive().optional(),
   productId: z.string().uuid().optional(),
   idempotencyKey: z.string().min(8).max(80).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(request: NextRequest) {

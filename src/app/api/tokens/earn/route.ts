@@ -22,7 +22,7 @@ const Body = z.object({
   reason: z.enum(CLIENT_REASONS),
   amount: z.number().int().positive().max(500).optional(),
   idempotencyKey: z.string().min(8).max(80).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(request: NextRequest) {
