@@ -13,7 +13,16 @@ on:
       - 'capacitor.config.ts'
       - 'resources/**'
       - '.github/workflows/mobile-build.yml'
+      - '.github/actions/install-private-dependencies/**'
   workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# Applies to npm ci, lifecycle scripts and npx installs; the Web gate audits only public projections.
+env:
+  npm_config_audit: "false"
+  npm_config_fund: "false"
 
 jobs:
   build-android:
@@ -21,20 +30,18 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Déps git privées (@purama/smarana) : le lockfile résout en git+ssh,
-      # illisible sur un runner sans clé — réécriture vers https + token.
-      - name: Configure git for private npm deps
-        env:
-          GH_PRIVATE_DEPS_TOKEN: ${{ secrets.GH_PRIVATE_DEPS_TOKEN }}
-        run: git config --global url."https://x-access-token:${GH_PRIVATE_DEPS_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-
-      - name: Install deps
-        run: npm ci --legacy-peer-deps
+      - name: Install the exact dependencies through the verified private-source path
+        uses: ./.github/actions/install-private-dependencies
+        with:
+          shared-source-key: ${{ secrets.PURAMA_PACKAGES_READ_SSH_KEY }}
+          smarana-key: ${{ secrets.SMARANA_READ_SSH_KEY }}
 
       - name: Setup JDK 21
         uses: actions/setup-java@v4
@@ -119,20 +126,18 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Déps git privées (@purama/smarana) : le lockfile résout en git+ssh,
-      # illisible sur un runner sans clé — réécriture vers https + token.
-      - name: Configure git for private npm deps
-        env:
-          GH_PRIVATE_DEPS_TOKEN: ${{ secrets.GH_PRIVATE_DEPS_TOKEN }}
-        run: git config --global url."https://x-access-token:${GH_PRIVATE_DEPS_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-
-      - name: Install deps
-        run: npm ci --legacy-peer-deps
+      - name: Install the exact dependencies through the verified private-source path
+        uses: ./.github/actions/install-private-dependencies
+        with:
+          shared-source-key: ${{ secrets.PURAMA_PACKAGES_READ_SSH_KEY }}
+          smarana-key: ${{ secrets.SMARANA_READ_SSH_KEY }}
 
       - name: Scaffold iOS platform (Capacitor)
         run: |
