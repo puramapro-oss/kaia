@@ -24,9 +24,6 @@ const SIGNUP_EMAIL = `clientsim-e1+${TS}@purama.dev`;
 const SIGNUP_PASSWORD = `Sim${TS}!Aa9`;
 const SIGNUP_NAME = "ClientSim E1";
 
-const DEMO_EMAIL = process.env.KAIA_DEMO_EMAIL ?? "matiss.frasne@gmail.com";
-const DEMO_PASSWORD = process.env.KAIA_DEMO_PASSWORD ?? "Test1234!";
-
 test.describe.configure({ mode: "serial" });
 
 // ─────────────────────────────────────────────────────────────────────────────
